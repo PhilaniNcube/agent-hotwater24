@@ -50,6 +50,11 @@ import { isChatTurnSettledEvent } from "@/lib/chat/events";
 import type { ActiveChat, SetupStatus, Viewer } from "@/lib/chat/types";
 
 type AgentSnapshot = EveAgentStoreSnapshot<EveMessageData>;
+type StreamSessionOptions = {
+  readonly ignoreLeadingWaiting?: boolean;
+  readonly signal?: AbortSignal;
+  readonly startIndex?: number;
+};
 
 export type DraftHandlers = {
   readonly clearDraft: () => void;
@@ -111,6 +116,10 @@ function createPersistedClientSession({
 
       return createBrowserMessageResponse({
         continuationToken: response.continuationToken,
+        ignoreLeadingWaiting:
+          Boolean(previousSession.sessionId) &&
+          previousSession.sessionId === response.sessionId &&
+          startedSession.streamIndex > 0,
         onFinalize: (events) => {
           session = advanceBrowserSession({
             baseStreamIndex: startedSession.streamIndex,
@@ -125,7 +134,7 @@ function createPersistedClientSession({
         startIndex: startedSession.streamIndex,
       });
     },
-    stream(options?: Parameters<ClientSession["stream"]>[0]) {
+    stream(options?: StreamSessionOptions) {
       const sessionId = session.sessionId;
 
       if (!sessionId) {
@@ -135,6 +144,7 @@ function createPersistedClientSession({
       const startIndex = options?.startIndex ?? session.streamIndex;
 
       return streamSessionEvents({
+        ignoreLeadingWaiting: options?.ignoreLeadingWaiting,
         onFinalize: (events) => {
           session = advanceBrowserSession({
             baseStreamIndex: startIndex,
@@ -260,12 +270,14 @@ function createHandleMessageBody({
 
 function createBrowserMessageResponse({
   continuationToken,
+  ignoreLeadingWaiting = false,
   onFinalize,
   sessionId,
   signal,
   startIndex,
 }: {
   readonly continuationToken?: string;
+  readonly ignoreLeadingWaiting?: boolean;
   readonly onFinalize: (events: readonly HandleMessageStreamEvent[]) => void;
   readonly sessionId: string;
   readonly signal?: AbortSignal;
@@ -284,6 +296,7 @@ function createBrowserMessageResponse({
       consumed = true;
 
       return streamSessionEvents({
+        ignoreLeadingWaiting,
         onFinalize,
         sessionId,
         signal,
@@ -294,11 +307,13 @@ function createBrowserMessageResponse({
 }
 
 async function* streamSessionEvents({
+  ignoreLeadingWaiting = false,
   onFinalize,
   sessionId,
   signal,
   startIndex,
 }: {
+  readonly ignoreLeadingWaiting?: boolean;
   readonly onFinalize: (events: readonly HandleMessageStreamEvent[]) => void;
   readonly sessionId: string;
   readonly signal?: AbortSignal;
@@ -319,7 +334,12 @@ async function* streamSessionEvents({
           nextIndex += 1;
           yield event;
 
-          if (isChatTurnSettledEvent(event)) {
+          const isStaleLeadingWaiting =
+            ignoreLeadingWaiting &&
+            events.length === 1 &&
+            event.type === "session.waiting";
+
+          if (isChatTurnSettledEvent(event) && !isStaleLeadingWaiting) {
             return;
           }
         }
@@ -441,7 +461,7 @@ function advanceBrowserSession({
 }) {
   const boundary = findBoundaryEvent(events);
 
-  if (boundary?.type === "session.waiting" || boundary?.type === "turn.completed") {
+  if (boundary?.type === "session.waiting") {
     return {
       continuationToken: continuationToken ?? session.continuationToken,
       sessionId,
@@ -564,6 +584,9 @@ export function AgentChatSession({
   const activeChatIdRef = useRef(activeChat?.id ?? chatId ?? null);
   const eventIndexRef = useRef(activeChat?.events.length ?? 0);
   const eventIndexChatIdRef = useRef(activeChat?.id ?? chatId ?? null);
+  const knownInitialEventsRef = useRef<readonly HandleMessageStreamEvent[]>(
+    activeChat?.events ?? [],
+  );
   const firstMessageRef = useRef<string | null>(null);
   const currentTitleRef = useRef(activeChat?.title ?? "New chat");
   const resumeStartedRef = useRef(false);
@@ -577,7 +600,7 @@ export function AgentChatSession({
     initialSession: activeChat?.session,
     onSessionStarted: (session) => onSessionStartedRef.current(session),
   });
-  const isSetupReady = setupStatus.authReady && setupStatus.databaseReady;
+  const isSetupReady = setupStatus.appReady;
   const router = useRouter();
 
   const persistSnapshot = useCallback(
@@ -591,7 +614,11 @@ export function AgentChatSession({
       setClientError(null);
 
       try {
-        const events = mergeLocalEvents(snapshot.events, localEventsRef.current);
+        const snapshotEvents = preserveKnownInitialEvents(
+          snapshot.events,
+          knownInitialEventsRef.current,
+        );
+        const events = mergeLocalEvents(snapshotEvents, localEventsRef.current);
 
         await saveChatSnapshotAction({
           chatId,
@@ -599,6 +626,7 @@ export function AgentChatSession({
           session: snapshot.session,
         });
         eventIndexRef.current = events.length;
+        knownInitialEventsRef.current = events;
         touchChat({
           id: chatId,
           title: currentTitleRef.current,
@@ -719,6 +747,7 @@ export function AgentChatSession({
     activeChatIdRef.current = null;
     eventIndexRef.current = 0;
     eventIndexChatIdRef.current = null;
+    knownInitialEventsRef.current = [];
     setCurrentTitle("New chat");
     currentTitleRef.current = "New chat";
     firstMessageRef.current = null;
@@ -761,6 +790,7 @@ export function AgentChatSession({
         activeChatIdRef.current = created.id;
         eventIndexChatIdRef.current = created.id;
         eventIndexRef.current = 0;
+        knownInitialEventsRef.current = [];
         setCurrentTitle(created.title);
         currentTitleRef.current = created.title;
         router.replace(`/chat/${created.id}`, { scroll: false });
@@ -952,10 +982,14 @@ export function AgentChatSession({
     if (eventIndexChatIdRef.current !== nextChatId) {
       eventIndexChatIdRef.current = nextChatId;
       eventIndexRef.current = nextEventIndex;
+      knownInitialEventsRef.current = activeChat?.events ?? [];
       localEventsRef.current = [];
       setLocalEvents([]);
     } else if (!isBusy) {
       eventIndexRef.current = Math.max(eventIndexRef.current, nextEventIndex);
+      if (activeChat) {
+        knownInitialEventsRef.current = activeChat.events;
+      }
     }
     setCurrentTitle(nextTitle);
     currentTitleRef.current = nextTitle;
@@ -975,6 +1009,11 @@ export function AgentChatSession({
     const abortController = new AbortController();
     const existingEvents = activeChat.events;
     const startIndex = existingEvents.length;
+    const shouldIgnoreLeadingWaiting =
+      !hasLatestUserMessage(
+        reduceEventsToMessageData(existingEvents).messages,
+        pendingUserMessage,
+      );
     const session = createPersistedClientSession({
       initialSession: activeChat.session,
       onSessionStarted: persistSessionState,
@@ -989,10 +1028,13 @@ export function AgentChatSession({
 
     void (async () => {
       try {
-        for await (const event of session.stream({
+        const resumeStreamOptions: StreamSessionOptions = {
+          ignoreLeadingWaiting: shouldIgnoreLeadingWaiting,
           signal: abortController.signal,
           startIndex,
-        })) {
+        };
+
+        for await (const event of session.stream(resumeStreamOptions)) {
           if (cancelled) {
             return;
           }
@@ -1353,6 +1395,17 @@ function mergeLocalEvents(
   return merged;
 }
 
+function preserveKnownInitialEvents(
+  snapshotEvents: readonly HandleMessageStreamEvent[],
+  knownEvents: readonly HandleMessageStreamEvent[],
+) {
+  if (knownEvents.length === 0 || snapshotEvents.length >= knownEvents.length) {
+    return snapshotEvents;
+  }
+
+  return [...knownEvents, ...snapshotEvents];
+}
+
 function getLocalEventKey(event: HandleMessageStreamEvent) {
   if (event.type === "authorization.completed") {
     return `${event.type}:${event.data.turnId}:${event.data.name}:${event.data.outcome}:${event.data.reason ?? ""}`;
@@ -1533,7 +1586,7 @@ export function ComposerFooterControls({
 }
 
 function ComposerHint({ setupStatus }: { readonly setupStatus: SetupStatus }) {
-  if (!setupStatus.authReady || !setupStatus.databaseReady) {
+  if (!setupStatus.appReady) {
     const reason = getSetupRequiredReason(setupStatus);
 
     return (
@@ -1557,14 +1610,22 @@ function ComposerHint({ setupStatus }: { readonly setupStatus: SetupStatus }) {
 }
 
 function getSetupRequiredReason(setupStatus: SetupStatus) {
-  if (!setupStatus.databaseReady) {
+  if (!setupStatus.databaseConfigured) {
     return "Connect Neon Postgres before chatting.";
+  }
+
+  if (!setupStatus.databaseSchemaReady) {
+    return "Run database migrations before chatting.";
   }
 
   if (!setupStatus.authReady) {
     return setupStatus.missing.length
       ? `Finish auth setup. Missing: ${setupStatus.missing.join(", ")}.`
       : "Finish auth setup before chatting.";
+  }
+
+  if (!setupStatus.rateLimitReady) {
+    return "Provision Upstash Redis before chatting.";
   }
 
   return "Finish setup before chatting.";

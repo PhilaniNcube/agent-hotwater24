@@ -55,7 +55,7 @@ export function ChatSidebar({
   readonly setupStatus: SetupStatus;
   readonly viewer: Viewer | null;
 }) {
-  const authDisabled = !setupStatus.authReady || !setupStatus.databaseReady;
+  const authDisabled = !setupStatus.appReady;
   const newSessionActive = activeChatId === null;
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 

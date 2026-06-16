@@ -20,31 +20,27 @@ export function IntegrationsMenu({
   readonly onNotionEnabledChange: (enabled: boolean) => void;
   readonly setupStatus: SetupStatus;
 }) {
-  const setupReady = setupStatus.authReady && setupStatus.databaseReady;
+  const setupReady = setupStatus.appReady;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
           aria-label="Connections"
-          className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground/75 transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:bg-muted/60 focus-visible:text-foreground focus-visible:outline-none dark:text-muted-foreground/60"
+          className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground/75 transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:bg-muted/60 focus-visible:text-foreground focus-visible:outline-none dark:text-muted-foreground/60 [&_svg]:cursor-pointer"
           type="button"
         >
-          {notionEnabled ? (
-            <NotionIcon className="size-[18px] shrink-0" />
-          ) : (
-            <HammerIcon className="size-4 shrink-0" />
-          )}
+          <HammerIcon className="size-4 shrink-0 cursor-pointer" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
-        className="w-52 rounded-md border-border bg-popover p-1"
+        className="w-44 rounded-md border-border bg-popover p-1"
         sideOffset={4}
       >
         <DropdownMenuItem
           aria-checked={notionEnabled}
-          className="h-11 cursor-pointer gap-3 rounded-sm px-2 py-1.5 text-sm focus:bg-muted/70"
+          className="h-9 cursor-pointer gap-2 rounded-sm px-2 py-1 text-sm focus:bg-muted/70"
           disabled={!setupReady}
           onSelect={(event) => {
             event.preventDefault();
@@ -55,23 +51,23 @@ export function IntegrationsMenu({
           }}
           role="menuitemcheckbox"
         >
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-background text-foreground">
-            <NotionIcon className="size-5" />
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-md border border-border bg-background text-foreground">
+            <NotionIcon className="size-[18px]" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[15px] text-foreground">Notion</span>
+            <span className="block truncate text-sm text-foreground">Notion</span>
           </span>
           <span
             aria-hidden="true"
             className={cn(
-              "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+              "relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors",
               notionEnabled ? "bg-emerald-500" : "bg-muted",
             )}
           >
             <span
               className={cn(
-                "size-4 rounded-full bg-white shadow-sm transition-transform",
-                notionEnabled ? "translate-x-[18px]" : "translate-x-0.5",
+                "size-3 rounded-full bg-white shadow-sm transition-transform",
+                notionEnabled ? "translate-x-[15px]" : "translate-x-0.5",
               )}
             />
           </span>

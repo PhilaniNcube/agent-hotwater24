@@ -35,7 +35,7 @@ export function HomeChatPage() {
   const [submitting, setSubmitting] = useState(false);
   const [clientError, setClientError] = useState<string | null>(null);
   const [dismissedError, setDismissedError] = useState<string | null>(null);
-  const setupReady = setupStatus.authReady && setupStatus.databaseReady;
+  const setupReady = setupStatus.appReady;
   const router = useRouter();
   const toastError = clientError && dismissedError !== clientError ? clientError : null;
 
@@ -71,7 +71,7 @@ export function HomeChatPage() {
       setClientError(null);
 
       if (!setupReady) {
-        setClientError("Finish the required Neon and Better Auth setup before chatting.");
+        setClientError(getHomeComposerDisabledReason({ setupStatus, submitting }) ?? "Finish setup before chatting.");
         return;
       }
 
@@ -166,8 +166,12 @@ function getHomeComposerDisabledReason({
   readonly setupStatus: SetupStatus;
   readonly submitting: boolean;
 }) {
-  if (!setupStatus.databaseReady) {
+  if (!setupStatus.databaseConfigured) {
     return "Connect Neon Postgres before chatting.";
+  }
+
+  if (!setupStatus.databaseSchemaReady) {
+    return "Run database migrations: vercel env run -e production -- pnpm db:migrate.";
   }
 
   if (!setupStatus.authReady) {
@@ -176,6 +180,10 @@ function getHomeComposerDisabledReason({
       : "";
 
     return `Finish auth setup before chatting.${missing}`;
+  }
+
+  if (!setupStatus.rateLimitReady) {
+    return "Provision Upstash Redis before chatting.";
   }
 
   if (submitting) {

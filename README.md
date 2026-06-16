@@ -1,8 +1,8 @@
 # Eve Chat Template
 
-A persisted Next.js chat template for [Eve](https://beta.eve.dev), built with shadcn/ui, Tailwind CSS, Streamdown, Better Auth, Drizzle, and Neon.
+A persisted Next.js chat template for [Eve](https://beta.eve.dev), built with shadcn/ui, Tailwind CSS, Streamdown, Better Auth, Drizzle, Neon, and Upstash Redis.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?project-name=eve-chat-template&repository-name=eve-chat-template&repository-url=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Feve-chat-template%2Ftree%2Fmain&env=BETTER_AUTH_SECRET%2CBETTER_AUTH_URL%2CNEXT_PUBLIC_VERCEL_APP_CLIENT_ID%2CVERCEL_APP_CLIENT_SECRET&envDescription=Neon+provisions+DATABASE_URL.+Upstash+Redis+adds+optional+rate-limit+storage.+Vercel+Connect+provisions+NOTION_CONNECTOR.+Add+Better+Auth+URL%2Fsecret+and+Sign+in+with+Vercel+credentials.&envLink=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Feve-chat-template%2Fblob%2Fmain%2Fdocs%2Fsetup-and-deploy.md&products=%5B%7B%22type%22%3A%22integration%22%2C%22protocol%22%3A%22storage%22%2C%22productSlug%22%3A%22neon%22%2C%22integrationSlug%22%3A%22neon%22%7D%2C%7B%22type%22%3A%22integration%22%2C%22protocol%22%3A%22storage%22%2C%22productSlug%22%3A%22upstash-kv%22%2C%22integrationSlug%22%3A%22upstash%22%7D%5D&connect=%5B%7B%22type%22%3A%22mcp.notion.com%22%2C%22env%22%3A%22NOTION_CONNECTOR%22%7D%5D)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?project-name=eve-chat-template&repository-name=eve-chat-template&repository-url=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Feve-chat-template%2Ftree%2Fmain&env=BETTER_AUTH_SECRET%2CNEXT_PUBLIC_VERCEL_APP_CLIENT_ID%2CVERCEL_APP_CLIENT_SECRET&envDescription=Neon+provisions+DATABASE_URL.+Upstash+Redis+provisions+rate-limit+storage.+Add+Better+Auth+secret+and+Sign+in+with+Vercel+credentials.+After+deploy%2C+run+production+migrations+from+the+setup+guide.&envLink=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Feve-chat-template%2Fblob%2Fmain%2Fdocs%2Fsetup-and-deploy.md&products=%5B%7B%22type%22%3A%22integration%22%2C%22protocol%22%3A%22storage%22%2C%22productSlug%22%3A%22neon%22%2C%22integrationSlug%22%3A%22neon%22%7D%2C%7B%22type%22%3A%22integration%22%2C%22protocol%22%3A%22storage%22%2C%22productSlug%22%3A%22upstash-kv%22%2C%22integrationSlug%22%3A%22upstash%22%7D%5D)
 
 ## Getting Started
 
@@ -26,7 +26,7 @@ Provision storage with the [Vercel CLI integration commands](https://vercel.com/
 # Required: persisted chat, auth, Eve session state, and message snapshots
 vercel integration add neon
 
-# Optional: Redis-backed rate limiting
+# Required: Redis-backed rate limiting
 vercel integration add upstash
 ```
 
@@ -41,23 +41,21 @@ Required environment variables:
 ```bash
 DATABASE_URL=
 BETTER_AUTH_SECRET=
-BETTER_AUTH_URL=
 NEXT_PUBLIC_VERCEL_APP_CLIENT_ID=
 VERCEL_APP_CLIENT_SECRET=
-```
-
-Optional environment variables for Redis-backed rate limiting:
-
-```bash
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
 KV_REST_API_URL=
 KV_REST_API_TOKEN=
 ```
 
-Optional environment variable for hosted Notion support:
+Optional environment variables:
 
 ```bash
+# Override the app origin for custom production domains.
+BETTER_AUTH_URL=
+
+# Enable hosted Notion support.
 NOTION_CONNECTOR=
 ```
 
@@ -67,7 +65,7 @@ Create the Notion connector:
 vercel connect create mcp.notion.com --name notion
 ```
 
-The Deploy with Vercel flow provisions `NOTION_CONNECTOR` when Vercel Connect is available. For manual setup, put the returned connector UID in `NOTION_CONNECTOR`. The app falls back to `notion`, so local connectors created with `--name notion` work without editing `agent/connections/notion.ts`.
+The deploy button does not require Notion. For manual setup, put the returned connector UID in `NOTION_CONNECTOR`. The app falls back to `notion`, so local connectors created with `--name notion` work without editing `agent/connections/notion.ts`.
 
 If the connector is not attached to the linked project, run:
 
@@ -82,6 +80,12 @@ Create the database tables:
 pnpm db:migrate
 ```
 
+For production, run migrations with Vercel production env vars:
+
+```bash
+vercel env run -e production -- pnpm db:migrate
+```
+
 Start the development server:
 
 ```bash
@@ -93,6 +97,7 @@ pnpm dev
 - Text chat with an Eve agent through same-origin `/eve/v1/*` routes
 - Better Auth sign-in with Vercel
 - Mandatory Neon-backed chat history
+- Mandatory Upstash Redis rate limiting for authenticated chat sends
 - Drizzle schema and migrations under `lib/db`
 - Saved Eve session cursors and event snapshots
 - Sidebar history with delete and new-chat actions
@@ -101,7 +106,6 @@ pnpm dev
 - Eve-generated chat titles after the first turn
 - Streamdown markdown rendering for assistant text and reasoning
 - shadcn/Tailwind components for messages, tools, HITL prompts, and composer
-- Optional Upstash Redis rate limiting for authenticated chat sends
 
 This template intentionally does not include Slack code, file uploads, Vercel Blob, guest mode, NextAuth/Auth.js, or AI Elements.
 

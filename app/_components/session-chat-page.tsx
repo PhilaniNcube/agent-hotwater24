@@ -49,6 +49,7 @@ export function SessionChatPage({
   const controllerRef = useRef<AgentChatController | null>(null);
   const pendingConsumedRef = useRef(false);
   const toastError = clientError && dismissedError !== clientError ? clientError : null;
+  const isLoadingChat = !activeChat && !lockedToClientSession;
 
   useEffect(() => {
     const nextPendingUserMessage = readPendingUserMessage(chatId);
@@ -79,8 +80,24 @@ export function SessionChatPage({
 
       const storedPending = readPendingUserMessage(chatId);
 
-      setActiveChat(detail.activeChat);
-      setPendingUserMessage(storedPending ?? detail.activeChat?.pendingUserMessage ?? null);
+      setActiveChat((current) => {
+        if (!detail.activeChat && current?.id === chatId) {
+          return current;
+        }
+
+        return detail.activeChat;
+      });
+      setPendingUserMessage((current) => {
+        if (storedPending) {
+          return storedPending;
+        }
+
+        if (detail.activeChat) {
+          return detail.activeChat.pendingUserMessage ?? null;
+        }
+
+        return current;
+      });
     };
     const target = window as Window & {
       __eveChatRouteSync?: ChatRouteSyncDetail;
@@ -177,6 +194,11 @@ export function SessionChatPage({
   );
 
   const handleComposerSubmit = useCallback(async (text: string) => {
+    if (isLoadingChat) {
+      setClientError("Chat history is still loading.");
+      return;
+    }
+
     const controller = controllerRef.current;
 
     if (!controller) {
@@ -188,7 +210,7 @@ export function SessionChatPage({
       clearDraft: () => setDraft(""),
       restoreDraft: setDraft,
     });
-  }, []);
+  }, [isLoadingChat]);
 
   const handleComposerStop = useCallback(() => {
     controllerRef.current?.stop();
@@ -203,11 +225,11 @@ export function SessionChatPage({
     : activeChat
       ? `${chatId}:loaded`
       : `${chatId}:blank`;
-  const isLoadingChat = !activeChat && !lockedToClientSession;
   const composerDisabled =
-    !setupStatus.authReady || !setupStatus.databaseReady || controllerStatus.isDisabled;
+    !setupStatus.appReady || isLoadingChat || controllerStatus.isDisabled;
   const composerDisabledReason = getSessionComposerDisabledReason({
     controllerStatus,
+    isLoadingChat,
     setupStatus,
   });
 
@@ -255,17 +277,27 @@ export function SessionChatPage({
 
 function getSessionComposerDisabledReason({
   controllerStatus,
+  isLoadingChat,
   setupStatus,
 }: {
   readonly controllerStatus: AgentChatControllerStatus;
+  readonly isLoadingChat: boolean;
   readonly setupStatus: SetupStatus;
 }) {
-  if (!setupStatus.databaseReady) {
+  if (!setupStatus.databaseConfigured) {
     return "Connect Neon Postgres before chatting.";
+  }
+
+  if (!setupStatus.databaseSchemaReady) {
+    return "Run database migrations: vercel env run -e production -- pnpm db:migrate.";
   }
 
   if (controllerStatus.disabledReason) {
     return controllerStatus.disabledReason;
+  }
+
+  if (isLoadingChat) {
+    return "Chat history is still loading.";
   }
 
   if (!setupStatus.authReady) {
@@ -274,6 +306,10 @@ function getSessionComposerDisabledReason({
       : "";
 
     return `Finish auth setup before chatting.${missing}`;
+  }
+
+  if (!setupStatus.rateLimitReady) {
+    return "Provision Upstash Redis before chatting.";
   }
 
   if (controllerStatus.isDisabled) {

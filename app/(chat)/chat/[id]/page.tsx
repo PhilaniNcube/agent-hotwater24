@@ -27,9 +27,9 @@ async function ExistingChat({
 }: {
   readonly chatId: string;
 }) {
-  const setupStatus = getSetupStatus();
-  const viewer = await getServerViewer();
-  const appReady = setupStatus.authReady && setupStatus.databaseReady;
+  const setupStatus = await getSetupStatus();
+  const viewer = await getServerViewer(setupStatus);
+  const appReady = setupStatus.appReady;
   const activeChat = viewer && appReady ? await getChatForUser(chatId, viewer.id) : null;
 
   if (viewer && appReady && !activeChat) {

@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { isAppConfigured } from "@/lib/setup";
 
 export const betterAuthEveAuth: AuthFn<Request> = async (request) => {
-  if (!isAppConfigured()) {
+  if (!(await isAppConfigured())) {
     return null;
   }
 

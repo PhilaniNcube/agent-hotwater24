@@ -55,13 +55,14 @@ export function AgentChatShell({
   const [draftBeforeSignIn, setDraftBeforeSignIn] = useState("");
   const [signInCallbackPath, setSignInCallbackPath] = useState("/");
   const [viewerState, setViewerState] = useState(viewer);
+  const [setupStatusState, setSetupStatusState] = useState(setupStatus);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [enabledConnections, setEnabledConnections] = useState<EnabledConnections>({
     notion: true,
   });
   const cursorRef = useRef(initialNextCursor);
   const activeChatIdRef = useRef(activeChatId);
-  const setupReady = setupStatus.authReady && setupStatus.databaseReady;
+  const setupReady = setupStatusState.appReady;
   const router = useRouter();
 
   useEffect(() => {
@@ -201,12 +202,15 @@ export function AgentChatShell({
     ({
       chats,
       nextCursor: incomingNextCursor,
+      setupStatus: incomingSetupStatus,
       viewer: incomingViewer,
     }: {
       readonly chats: readonly ChatListItem[];
       readonly nextCursor: string | null;
+      readonly setupStatus: SetupStatus;
       readonly viewer: Viewer | null;
     }) => {
+      setSetupStatusState(incomingSetupStatus);
       setViewerState(incomingViewer);
       setHistory((items) => (incomingViewer ? mergeChatHistory(chats, items) : []));
       setNextCursor(incomingNextCursor);
@@ -242,7 +246,7 @@ export function AgentChatShell({
       requestSignIn,
       setActiveChatId,
       setConnectionEnabled,
-      setupStatus,
+      setupStatus: setupStatusState,
       touchChat,
       updateChatTitle,
       viewer: viewerState,
@@ -253,7 +257,7 @@ export function AgentChatShell({
       removeChat,
       requestSignIn,
       setConnectionEnabled,
-      setupStatus,
+      setupStatusState,
       touchChat,
       updateChatTitle,
       viewerState,
@@ -273,7 +277,7 @@ export function AgentChatShell({
       onNewChat={startNewChat}
       onSignIn={() => requestSignIn()}
       onToggleSidebar={() => setDesktopSidebarOpenPersisted(false)}
-      setupStatus={setupStatus}
+      setupStatus={setupStatusState}
       viewer={viewerState}
     />
   );
@@ -319,7 +323,7 @@ export function AgentChatShell({
               ) : null}
             </div>
             {!historyLoading && !viewerState ? (
-              <div className="pointer-events-auto flex min-w-0 items-center justify-end gap-1.5">
+              <div className="pointer-events-auto mt-1 flex min-w-0 items-center justify-end gap-1.5">
                 <AuthTopActions onSignIn={() => requestSignIn()} />
               </div>
             ) : null}
@@ -351,7 +355,7 @@ export function AgentChatShell({
               onNavigate={handleSidebarNavigate}
               onNewChat={startNewChat}
               onSignIn={() => requestSignIn()}
-              setupStatus={setupStatus}
+              setupStatus={setupStatusState}
               viewer={viewerState}
             />
           </div>
@@ -401,9 +405,9 @@ function setSidebarDocumentHint(open: boolean) {
 
 function AuthTopActions({ onSignIn }: { readonly onSignIn: () => void }) {
   return (
-    <div className="flex max-w-[calc(100vw-4rem)] items-center gap-2">
+    <div className="flex max-w-[calc(100vw-4rem)] items-center gap-1.5">
       <Button
-        className="h-8 rounded-md border border-border bg-background/70 px-3 text-sm font-medium text-foreground shadow-sm hover:bg-muted/60 sm:h-9 sm:px-4"
+        className="h-8 rounded-md border border-border bg-background/70 px-3 text-sm font-medium text-foreground shadow-sm hover:bg-muted/60"
         onClick={onSignIn}
         type="button"
         variant="outline"
@@ -411,7 +415,7 @@ function AuthTopActions({ onSignIn }: { readonly onSignIn: () => void }) {
         Log In
       </Button>
       <Button
-        className="h-8 rounded-md bg-foreground px-3 text-sm font-medium text-background hover:bg-foreground/90 sm:h-9 sm:px-4"
+        className="h-8 rounded-md bg-foreground px-3 text-sm font-medium text-background hover:bg-foreground/90"
         onClick={onSignIn}
         type="button"
       >

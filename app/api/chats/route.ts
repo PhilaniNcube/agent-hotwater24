@@ -4,13 +4,13 @@ import { getServerViewer } from "@/lib/session";
 import { getSetupStatus } from "@/lib/setup";
 
 export async function GET(request: Request) {
-  const setupStatus = getSetupStatus();
+  const setupStatus = await getSetupStatus();
 
-  if (!setupStatus.authReady || !setupStatus.databaseReady) {
+  if (!setupStatus.appReady) {
     return NextResponse.json({ chats: [], nextCursor: null });
   }
 
-  const viewer = await getServerViewer();
+  const viewer = await getServerViewer(setupStatus);
 
   if (!viewer) {
     return NextResponse.json({ chats: [], nextCursor: null }, { status: 401 });

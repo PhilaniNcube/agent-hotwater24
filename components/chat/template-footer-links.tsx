@@ -18,15 +18,8 @@ const DEPLOY_PRODUCTS = [
 ] as const;
 const DEPLOY_ENV_VARS = [
   "BETTER_AUTH_SECRET",
-  "BETTER_AUTH_URL",
   "NEXT_PUBLIC_VERCEL_APP_CLIENT_ID",
   "VERCEL_APP_CLIENT_SECRET",
-] as const;
-const DEPLOY_CONNECT = [
-  {
-    type: "mcp.notion.com",
-    env: "NOTION_CONNECTOR",
-  },
 ] as const;
 const DEPLOY_URL = (() => {
   const params = new URLSearchParams([
@@ -36,11 +29,10 @@ const DEPLOY_URL = (() => {
     ["env", DEPLOY_ENV_VARS.join(",")],
     [
       "envDescription",
-      "Neon provisions DATABASE_URL. Upstash Redis adds optional rate-limit storage. Vercel Connect provisions NOTION_CONNECTOR. Add Better Auth URL/secret and Sign in with Vercel credentials.",
+      "Neon provisions DATABASE_URL. Upstash Redis provisions rate-limit storage. Add Better Auth secret and Sign in with Vercel credentials. After deploy, run production migrations from the setup guide.",
     ],
     ["envLink", `${GITHUB_URL}/blob/main/docs/setup-and-deploy.md`],
     ["products", JSON.stringify(DEPLOY_PRODUCTS)],
-    ["connect", JSON.stringify(DEPLOY_CONNECT)],
   ]);
 
   return `https://vercel.com/new/clone?${params.toString()}`;

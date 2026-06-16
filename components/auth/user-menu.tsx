@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronsUpDownIcon, LogOutIcon } from "lucide-react";
+import { useState } from "react";
+import { ChevronsUpDownIcon, Loader2Icon, LogOutIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { VercelIcon } from "@/components/icons";
 import {
@@ -16,6 +17,7 @@ import type { Viewer } from "@/lib/chat/types";
 
 export function UserMenu({ viewer }: { readonly viewer: Viewer }) {
   const router = useRouter();
+  const [signingOut, setSigningOut] = useState(false);
 
   return (
     <DropdownMenu>
@@ -43,16 +45,33 @@ export function UserMenu({ viewer }: { readonly viewer: Viewer }) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem
+          aria-busy={signingOut}
+          disabled={signingOut}
           onSelect={(event) => {
             event.preventDefault();
-            void authClient.signOut().then(() => {
-              router.push("/");
-              router.refresh();
-            });
+
+            if (signingOut) {
+              return;
+            }
+
+            setSigningOut(true);
+            void authClient
+              .signOut()
+              .then(() => {
+                router.replace("/");
+                router.refresh();
+              })
+              .catch(() => {
+                setSigningOut(false);
+              });
           }}
         >
-          <LogOutIcon className="size-4" />
-          Sign out
+          {signingOut ? (
+            <Loader2Icon className="size-4 animate-spin" />
+          ) : (
+            <LogOutIcon className="size-4" />
+          )}
+          {signingOut ? "Signing out..." : "Sign out"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

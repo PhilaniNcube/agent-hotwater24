@@ -27,8 +27,11 @@ export type ActiveChat = {
 };
 
 export type SetupStatus = {
+  readonly appReady: boolean;
   readonly authReady: boolean;
+  readonly databaseConfigured: boolean;
   readonly databaseReady: boolean;
+  readonly databaseSchemaReady: boolean;
   readonly missing: readonly string[];
   readonly rateLimitReady: boolean;
 };
