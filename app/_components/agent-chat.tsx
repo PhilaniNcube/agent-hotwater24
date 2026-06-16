@@ -610,7 +610,12 @@ export function AgentChatSession({
   const [resumedEvents, setResumedEvents] = useState<HandleMessageStreamEvent[]>([]);
   const [isResuming, setIsResuming] = useState(false);
   const [localEvents, setLocalEvents] = useState<HandleMessageStreamEvent[]>([]);
-  const [localPendingUserMessage, setLocalPendingUserMessageState] = useState<string | null>(null);
+  const {
+    clearMessage: clearLocalPendingUserMessage,
+    message: localPendingUserMessage,
+    messageRef: localPendingUserMessageRef,
+    setMessage: setLocalPendingUserMessage,
+  } = usePendingUserMessage();
   const [skippingAuthorizationKey, setSkippingAuthorizationKey] = useState<string | null>(null);
   const activeChatIdRef = useRef(activeChat?.id ?? chatId ?? null);
   const eventIndexRef = useRef(activeChat?.events.length ?? 0);
@@ -622,7 +627,6 @@ export function AgentChatSession({
   const resumeStartedRef = useRef(false);
   const resumedEventsRef = useRef<HandleMessageStreamEvent[]>([]);
   const localEventsRef = useRef<HandleMessageStreamEvent[]>([]);
-  const localPendingUserMessageRef = useRef<string | null>(null);
   const onSessionStartedRef = useRef<(session: SessionState) => Promise<void> | void>(
     () => {},
   );
@@ -633,11 +637,6 @@ export function AgentChatSession({
   });
   const isSetupReady = setupStatus.appReady;
   const router = useRouter();
-
-  const setLocalPendingUserMessage = useCallback((message: string | null) => {
-    localPendingUserMessageRef.current = message;
-    setLocalPendingUserMessageState(message);
-  }, []);
 
   const persistSnapshot = useCallback(
     async (snapshot: AgentSnapshot) => {
@@ -750,17 +749,19 @@ export function AgentChatSession({
     [baseDisplayEvents, localEvents],
   );
   const displayMessages = hasResumeOverlay ? resumedData.messages : agent.data.messages;
+  const displayChatId = chatId ?? activeChatId ?? "new";
+  const hasLocalPendingUserMessage = Boolean(localPendingUserMessage);
   const isBusy =
     isResuming ||
-    Boolean(localPendingUserMessage) ||
+    hasLocalPendingUserMessage ||
     agent.status === "submitted" ||
     agent.status === "streaming";
   const pendingMessage = pendingUserMessage
-    ? createPendingUserMessage(chatId ?? activeChatId ?? "new", pendingUserMessage)
+    ? createPendingUserMessage(displayChatId, pendingUserMessage)
     : null;
   const localPendingMessage = localPendingUserMessage
     ? createPendingUserMessage(
-        chatId ?? activeChatId ?? "new",
+        displayChatId,
         localPendingUserMessage,
         "local-pending-user-message",
       )
@@ -777,7 +778,8 @@ export function AgentChatSession({
   const isEmpty = visibleMessages.length === 0 && !isBusy && !isWaitingForAuthorization;
   const isChatRoute = Boolean(shellActiveChatId || chatId);
   const showThinking =
-    !isWaitingForAuthorization && (Boolean(pendingMessage || localPendingMessage) || isBusy);
+    !isWaitingForAuthorization &&
+    (Boolean(pendingMessage || localPendingMessage) || isBusy);
   const thinkingPresence = useThinkingPresence(showThinking);
   const displayError = clientError ?? agent.error?.message ?? null;
   const toastError = displayError && dismissedError !== displayError ? displayError : null;
@@ -796,10 +798,10 @@ export function AgentChatSession({
     localEventsRef.current = [];
     setResumedEvents([]);
     setLocalEvents([]);
-    setLocalPendingUserMessage(null);
+    clearLocalPendingUserMessage();
     setIsResuming(false);
     setClientError(null);
-  }, [agent, setLocalPendingUserMessage]);
+  }, [agent, clearLocalPendingUserMessage]);
 
   const prepareSend = useCallback(
     async (firstMessage: string) => {
@@ -856,11 +858,22 @@ export function AgentChatSession({
         return;
       }
 
-      const canShowLocalPending = Boolean(isSetupReady && viewer && activeChatIdRef.current);
-
-      if (canShowLocalPending) {
+      const showLocalPendingMessage = () => {
         setLocalPendingUserMessage(message);
         draftHandlers.clearDraft();
+      };
+      const restoreAfterFailedSend = (errorMessage?: string) => {
+        clearLocalPendingUserMessage();
+        draftHandlers.restoreDraft(message);
+
+        if (errorMessage) {
+          setClientError(errorMessage);
+        }
+      };
+      const canShowBeforePreparing = Boolean(isSetupReady && viewer && activeChatIdRef.current);
+
+      if (canShowBeforePreparing) {
+        showLocalPendingMessage();
       }
 
       let ready = false;
@@ -868,9 +881,9 @@ export function AgentChatSession({
       try {
         ready = await prepareSend(message);
       } catch (error) {
-        setLocalPendingUserMessage(null);
-        draftHandlers.restoreDraft(message);
-        setClientError(error instanceof Error ? error.message : "Failed to prepare chat.");
+        restoreAfterFailedSend(
+          error instanceof Error ? error.message : "Failed to prepare chat.",
+        );
         return;
       }
 
@@ -880,23 +893,19 @@ export function AgentChatSession({
         if (chatId) {
           void clearChatPendingMessageAction(chatId);
         }
-        setLocalPendingUserMessage(null);
-        draftHandlers.restoreDraft(message);
+        restoreAfterFailedSend();
         return;
       }
 
       const chatId = activeChatIdRef.current;
 
       if (!chatId) {
-        setLocalPendingUserMessage(null);
-        draftHandlers.restoreDraft(message);
-        setClientError("Chat is still getting ready.");
+        restoreAfterFailedSend("Chat is still getting ready.");
         return;
       }
 
-      if (!canShowLocalPending) {
-        setLocalPendingUserMessage(message);
-        draftHandlers.clearDraft();
+      if (!canShowBeforePreparing) {
+        showLocalPendingMessage();
       }
 
       try {
@@ -906,9 +915,9 @@ export function AgentChatSession({
         });
         touchChat(updated);
       } catch (error) {
-        setLocalPendingUserMessage(null);
-        draftHandlers.restoreDraft(message);
-        setClientError(error instanceof Error ? error.message : "Failed to save pending message.");
+        restoreAfterFailedSend(
+          error instanceof Error ? error.message : "Failed to save pending message.",
+        );
         return;
       }
 
@@ -919,13 +928,12 @@ export function AgentChatSession({
         });
       } catch (error) {
         void clearChatPendingMessageAction(chatId);
-        setLocalPendingUserMessage(null);
-        draftHandlers.restoreDraft(message);
-        setClientError(error instanceof Error ? error.message : "Failed to send message.");
+        restoreAfterFailedSend(error instanceof Error ? error.message : "Failed to send message.");
       }
     },
     [
       agent,
+      clearLocalPendingUserMessage,
       disabledReason,
       enabledConnections,
       isBusy,
@@ -1073,7 +1081,7 @@ export function AgentChatSession({
       knownInitialEventsRef.current = activeChat?.events ?? [];
       localEventsRef.current = [];
       setLocalEvents([]);
-      setLocalPendingUserMessage(null);
+      clearLocalPendingUserMessage();
     } else if (!isBusy) {
       eventIndexRef.current = Math.max(eventIndexRef.current, nextEventIndex);
       if (activeChat) {
@@ -1087,8 +1095,8 @@ export function AgentChatSession({
     activeChat?.id,
     activeChat?.title,
     chatId,
+    clearLocalPendingUserMessage,
     isBusy,
-    setLocalPendingUserMessage,
   ]);
 
   useEffect(() => {
@@ -1215,9 +1223,9 @@ export function AgentChatSession({
       localPendingUserMessage &&
       hasLatestUserMessage(displayMessages, localPendingUserMessage)
     ) {
-      setLocalPendingUserMessage(null);
+      clearLocalPendingUserMessage();
     }
-  }, [displayMessages, localPendingUserMessage, setLocalPendingUserMessage]);
+  }, [clearLocalPendingUserMessage, displayMessages, localPendingUserMessage]);
 
   useEffect(() => {
     if (
@@ -1596,6 +1604,22 @@ function createPendingUserMessage(
     ],
     role: "user",
   };
+}
+
+function usePendingUserMessage() {
+  const [message, setMessageState] = useState<string | null>(null);
+  const messageRef = useRef<string | null>(null);
+
+  const setMessage = useCallback((nextMessage: string | null) => {
+    messageRef.current = nextMessage;
+    setMessageState(nextMessage);
+  }, []);
+
+  const clearMessage = useCallback(() => {
+    setMessage(null);
+  }, [setMessage]);
+
+  return { clearMessage, message, messageRef, setMessage };
 }
 
 function createConnectionClientContext(enabledConnections: EnabledConnections) {
