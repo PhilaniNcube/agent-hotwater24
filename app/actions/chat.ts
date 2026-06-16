@@ -8,15 +8,12 @@ import {
   deleteChatForUser,
   listChatsByUser,
   markChatPendingMessage,
-  maybeGetChatTitle,
   saveChatSnapshot,
   saveChatSessionState,
   skipChatAuthorization,
-  updateChatTitle,
 } from "@/lib/db/queries";
 import { RateLimitError, enforceRateLimit } from "@/lib/rate-limit";
 import { getServerViewer } from "@/lib/session";
-import { createFallbackTitle, DEFAULT_CHAT_TITLE, generateTitleWithEve } from "@/lib/chat/title";
 
 const SEND_LIMIT = 25;
 const SEND_WINDOW_SECONDS = 60 * 60;
@@ -145,34 +142,6 @@ export async function saveChatSessionStateAction(input: {
   });
 
   return { ok: true };
-}
-
-export async function generateChatTitleAction(input: {
-  readonly chatId: string;
-  readonly firstMessage: string;
-}) {
-  const viewer = await requireViewer();
-  const currentTitle = await maybeGetChatTitle(input.chatId, viewer.id);
-
-  if (currentTitle && currentTitle !== DEFAULT_CHAT_TITLE) {
-    return { title: currentTitle };
-  }
-
-  let title = createFallbackTitle(input.firstMessage);
-
-  try {
-    title = await generateTitleWithEve(input.firstMessage);
-  } catch {
-    title = createFallbackTitle(input.firstMessage);
-  }
-
-  const updated = await updateChatTitle({
-    chatId: input.chatId,
-    title,
-    userId: viewer.id,
-  });
-
-  return { title: updated.title };
 }
 
 export async function deleteChatAction(chatId: string) {

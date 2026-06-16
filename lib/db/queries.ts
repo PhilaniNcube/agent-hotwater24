@@ -3,7 +3,7 @@ import { and, asc, desc, eq, gte, lt, or, sql } from "drizzle-orm";
 import type { HandleMessageStreamEvent, SessionState } from "eve/client";
 import { isChatTurnSettledEvent } from "@/lib/chat/events";
 import type { ActiveChat, ChatListItem, ChatListPage } from "@/lib/chat/types";
-import { DEFAULT_CHAT_TITLE } from "@/lib/chat/title";
+import { createFallbackTitle, DEFAULT_CHAT_TITLE } from "@/lib/chat/title";
 import { chat, chatEvent } from "@/lib/db/schema";
 import { db } from "@/lib/db/client";
 
@@ -92,7 +92,7 @@ export async function createChat(
       id: randomUUID(),
       pendingUserMessage: pendingMessage || null,
       pendingUserMessageCreatedAt: pendingMessageCreatedAt,
-      title: DEFAULT_CHAT_TITLE,
+      title: pendingMessage ? createFallbackTitle(pendingMessage) : DEFAULT_CHAT_TITLE,
       userId,
     })
     .returning({
@@ -178,6 +178,13 @@ export async function markChatPendingMessage({
     .set({
       pendingUserMessage: pendingMessage,
       pendingUserMessageCreatedAt: new Date(),
+      title: sql<string>`
+        case
+          when ${chat.title} = ${DEFAULT_CHAT_TITLE}
+          then ${createFallbackTitle(pendingMessage)}
+          else ${chat.title}
+        end
+      `,
       updatedAt: new Date(),
     })
     .where(and(eq(chat.id, chatId), eq(chat.userId, userId)))
@@ -379,49 +386,6 @@ export async function saveChatSnapshot({
       updatedAt: new Date(),
     })
     .where(and(eq(chat.id, chatId), eq(chat.userId, userId)));
-}
-
-export async function updateChatTitle({
-  chatId,
-  title,
-  userId,
-}: {
-  readonly chatId: string;
-  readonly title: string;
-  readonly userId: string;
-}) {
-  const [row] = await db
-    .update(chat)
-    .set({
-      title,
-      updatedAt: new Date(),
-    })
-    .where(and(eq(chat.id, chatId), eq(chat.userId, userId)))
-    .returning({
-      id: chat.id,
-      title: chat.title,
-      updatedAt: chat.updatedAt,
-    });
-
-  if (!row) {
-    throw new Error("Chat not found.");
-  }
-
-  return {
-    id: row.id,
-    title: row.title,
-    updatedAt: row.updatedAt.toISOString(),
-  };
-}
-
-export async function maybeGetChatTitle(chatId: string, userId: string) {
-  const [row] = await db
-    .select({ title: chat.title })
-    .from(chat)
-    .where(and(eq(chat.id, chatId), eq(chat.userId, userId)))
-    .limit(1);
-
-  return row?.title ?? null;
 }
 
 export async function deleteChatForUser(chatId: string, userId: string) {

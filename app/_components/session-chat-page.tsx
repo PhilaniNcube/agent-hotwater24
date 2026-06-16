@@ -13,10 +13,6 @@ import {
   type ChatRouteSyncDetail,
 } from "@/app/_components/agent-chat-events";
 import { useChatShell } from "@/app/_components/chat-shell-context";
-import {
-  parsePendingChatMessage,
-  PENDING_CHAT_MESSAGE_KEY,
-} from "@/app/_components/pending-chat-message";
 import { ChatComposer } from "@/components/chat/composer";
 import type { ActiveChat, SetupStatus } from "@/lib/chat/types";
 
@@ -38,29 +34,21 @@ export function SessionChatPage({
   const [draft, setDraft] = useState("");
   const [controllerReady, setControllerReady] = useState(false);
   const [controllerStatus, setControllerStatus] = useState(IDLE_CONTROLLER_STATUS);
-  const [pendingUserMessage, setPendingUserMessage] = useState(() =>
-    readPendingUserMessage(chatId),
-  );
-  const [lockedToClientSession, setLockedToClientSession] = useState(() =>
-    Boolean(readPendingUserMessage(chatId)),
-  );
+  const [pendingUserMessage, setPendingUserMessage] = useState<string | null>(null);
   const [clientError, setClientError] = useState<string | null>(null);
   const [dismissedError, setDismissedError] = useState<string | null>(null);
   const controllerRef = useRef<AgentChatController | null>(null);
   const pendingConsumedRef = useRef(false);
   const toastError = clientError && dismissedError !== clientError ? clientError : null;
-  const isLoadingChat = !activeChat && !lockedToClientSession;
+  const isLoadingChat = !activeChat;
 
   useEffect(() => {
-    const nextPendingUserMessage = readPendingUserMessage(chatId);
-
     controllerRef.current = null;
     setControllerReady(false);
     setControllerStatus(IDLE_CONTROLLER_STATUS);
     setActiveChat(null);
     setDraft("");
-    setPendingUserMessage(nextPendingUserMessage);
-    setLockedToClientSession(Boolean(nextPendingUserMessage));
+    setPendingUserMessage(null);
     pendingConsumedRef.current = false;
   }, [chatId]);
 
@@ -77,9 +65,6 @@ export function SessionChatPage({
       if (detail.chatId !== chatId) {
         return;
       }
-
-      const storedPending = readPendingUserMessage(chatId);
-
       setActiveChat((current) => {
         if (!detail.activeChat && current?.id === chatId) {
           return current;
@@ -88,10 +73,6 @@ export function SessionChatPage({
         return detail.activeChat;
       });
       setPendingUserMessage((current) => {
-        if (storedPending) {
-          return storedPending;
-        }
-
         if (detail.activeChat) {
           return detail.activeChat.pendingUserMessage ?? null;
         }
@@ -139,12 +120,7 @@ export function SessionChatPage({
       return;
     }
 
-    const storedPending = parsePendingChatMessage(
-      window.sessionStorage.getItem(PENDING_CHAT_MESSAGE_KEY),
-    );
-    const pending = storedPending?.chatId === chatId ? storedPending : null;
-
-    if (!pending || pending.chatId !== chatId) {
+    if (!pendingUserMessage) {
       return;
     }
 
@@ -155,14 +131,11 @@ export function SessionChatPage({
     }
 
     pendingConsumedRef.current = true;
-    setLockedToClientSession(true);
-    window.sessionStorage.removeItem(PENDING_CHAT_MESSAGE_KEY);
 
-    void controller.sendMessage(pending.message, {
+    void controller.sendMessage(pendingUserMessage, {
       clearDraft: () => setDraft(""),
       restoreDraft: (value) => {
         setPendingUserMessage(null);
-        setLockedToClientSession(false);
         setDraft(value);
       },
     });
@@ -220,11 +193,7 @@ export function SessionChatPage({
     setPendingUserMessage(null);
   }, []);
 
-  const sessionKey = lockedToClientSession
-    ? chatId
-    : activeChat
-      ? `${chatId}:loaded`
-      : `${chatId}:blank`;
+  const sessionKey = activeChat ? `${chatId}:loaded` : `${chatId}:blank`;
   const composerDisabled =
     !setupStatus.appReady || isLoadingChat || controllerStatus.isDisabled;
   const composerDisabledReason = getSessionComposerDisabledReason({
@@ -321,16 +290,4 @@ function getSessionComposerDisabledReason({
   }
 
   return undefined;
-}
-
-function readPendingUserMessage(chatId: string) {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const pending = parsePendingChatMessage(
-    window.sessionStorage.getItem(PENDING_CHAT_MESSAGE_KEY),
-  );
-
-  return pending?.chatId === chatId ? pending.message : null;
 }

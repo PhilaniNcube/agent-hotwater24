@@ -9,10 +9,6 @@ import {
   type AgentChatControllerStatus,
 } from "@/app/_components/agent-chat";
 import { useChatShell } from "@/app/_components/chat-shell-context";
-import {
-  PENDING_CHAT_MESSAGE_KEY,
-  serializePendingChatMessage,
-} from "@/app/_components/pending-chat-message";
 import { ChatComposer } from "@/components/chat/composer";
 import { TemplateFooterLinks } from "@/components/chat/template-footer-links";
 import type { SetupStatus } from "@/lib/chat/types";
@@ -87,10 +83,6 @@ export function HomeChatPage() {
         const created = await createChatAction({ pendingUserMessage: message });
         const chatPath = `/chat/${created.id}`;
 
-        window.sessionStorage.setItem(
-          PENDING_CHAT_MESSAGE_KEY,
-          serializePendingChatMessage({ chatId: created.id, message }),
-        );
         router.prefetch(chatPath);
         touchChat(created);
         setActiveChatId(created.id);

@@ -27,7 +27,6 @@ import {
   appendChatEventAction,
   clearChatPendingMessageAction,
   createChatAction,
-  generateChatTitleAction,
   markChatPendingMessageAction,
   saveChatSnapshotAction,
   saveChatSessionStateAction,
@@ -570,7 +569,6 @@ export function AgentChatSession({
     setActiveChatId: setShellActiveChatId,
     setupStatus,
     touchChat,
-    updateChatTitle,
     viewer,
   } = useChatShell();
   const [activeChatId, setActiveChatId] = useState(activeChat?.id ?? chatId ?? null);
@@ -587,7 +585,6 @@ export function AgentChatSession({
   const knownInitialEventsRef = useRef<readonly HandleMessageStreamEvent[]>(
     activeChat?.events ?? [],
   );
-  const firstMessageRef = useRef<string | null>(null);
   const currentTitleRef = useRef(activeChat?.title ?? "New chat");
   const resumeStartedRef = useRef(false);
   const resumedEventsRef = useRef<HandleMessageStreamEvent[]>([]);
@@ -633,23 +630,11 @@ export function AgentChatSession({
           updatedAt: new Date().toISOString(),
         });
 
-        const firstMessage =
-          firstMessageRef.current ?? getFirstUserMessage(snapshot.data.messages);
-
-        if (firstMessage && currentTitleRef.current === "New chat") {
-          const titleResult = await generateChatTitleAction({
-            chatId,
-            firstMessage,
-          });
-          setCurrentTitle(titleResult.title);
-          currentTitleRef.current = titleResult.title;
-          updateChatTitle(chatId, titleResult.title);
-        }
       } catch (error) {
         setClientError(error instanceof Error ? error.message : "Failed to save chat.");
       }
     },
-    [touchChat, updateChatTitle, viewer],
+    [touchChat, viewer],
   );
 
   const persistStreamEvent = useCallback(
@@ -750,7 +735,6 @@ export function AgentChatSession({
     knownInitialEventsRef.current = [];
     setCurrentTitle("New chat");
     currentTitleRef.current = "New chat";
-    firstMessageRef.current = null;
     resumeStartedRef.current = false;
     resumedEventsRef.current = [];
     localEventsRef.current = [];
@@ -782,7 +766,7 @@ export function AgentChatSession({
       }
 
       if (!activeChatIdRef.current) {
-        const created = await createChatAction();
+        const created = await createChatAction({ pendingUserMessage: firstMessage });
 
         touchChat(created);
         setActiveChatId(created.id);
@@ -795,8 +779,6 @@ export function AgentChatSession({
         currentTitleRef.current = created.title;
         router.replace(`/chat/${created.id}`, { scroll: false });
       }
-
-      firstMessageRef.current ??= firstMessage;
 
       return true;
     },
@@ -1066,8 +1048,6 @@ export function AgentChatSession({
           return;
         }
 
-        const data = reduceEventsToMessageData(allEvents);
-
         await saveChatSnapshotAction({
           chatId: activeChat.id,
           events: allEvents,
@@ -1079,19 +1059,6 @@ export function AgentChatSession({
           title: currentTitleRef.current,
           updatedAt: new Date().toISOString(),
         });
-
-        const firstMessage =
-          firstMessageRef.current ?? getFirstUserMessage(data.messages);
-
-        if (firstMessage && currentTitleRef.current === "New chat") {
-          const titleResult = await generateChatTitleAction({
-            chatId: activeChat.id,
-            firstMessage,
-          });
-          setCurrentTitle(titleResult.title);
-          currentTitleRef.current = titleResult.title;
-          updateChatTitle(activeChat.id, titleResult.title);
-        }
 
         onPendingUserMessageSettled?.();
       } catch (error) {
@@ -1118,7 +1085,6 @@ export function AgentChatSession({
     pendingUserMessage,
     persistSessionState,
     touchChat,
-    updateChatTitle,
     viewer,
   ]);
 
@@ -1399,11 +1365,29 @@ function preserveKnownInitialEvents(
   snapshotEvents: readonly HandleMessageStreamEvent[],
   knownEvents: readonly HandleMessageStreamEvent[],
 ) {
-  if (knownEvents.length === 0 || snapshotEvents.length >= knownEvents.length) {
+  if (knownEvents.length === 0 || startsWithKnownEvents(snapshotEvents, knownEvents)) {
     return snapshotEvents;
   }
 
   return [...knownEvents, ...snapshotEvents];
+}
+
+function startsWithKnownEvents(
+  events: readonly HandleMessageStreamEvent[],
+  knownEvents: readonly HandleMessageStreamEvent[],
+) {
+  if (events.length < knownEvents.length) {
+    return false;
+  }
+
+  return knownEvents.every((event, index) => areSameStreamEvent(event, events[index]));
+}
+
+function areSameStreamEvent(
+  left: HandleMessageStreamEvent,
+  right: HandleMessageStreamEvent | undefined,
+) {
+  return right !== undefined && JSON.stringify(left) === JSON.stringify(right);
 }
 
 function getLocalEventKey(event: HandleMessageStreamEvent) {
@@ -1629,16 +1613,6 @@ function getSetupRequiredReason(setupStatus: SetupStatus) {
   }
 
   return "Finish setup before chatting.";
-}
-
-function getFirstUserMessage(messages: readonly EveMessageData["messages"][number][]) {
-  const message = messages.find((item) => item.role === "user");
-
-  if (!message) {
-    return null;
-  }
-
-  return getMessageText(message);
 }
 
 function hasLatestUserMessage(
