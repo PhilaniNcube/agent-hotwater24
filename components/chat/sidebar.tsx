@@ -9,6 +9,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
+import {
+  AuthDisplayLoggedIn,
+  AuthDisplayLoggedOut,
+} from "@/components/auth/auth-display";
 import { UserMenu } from "@/components/auth/user-menu";
 import { VercelIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
@@ -202,7 +206,18 @@ export function ChatSidebar({
         {viewer ? (
           <UserMenu viewer={viewer} />
         ) : isLoadingChats ? (
-          <div className="h-8 rounded-md bg-muted/25" />
+          <>
+            <AuthDisplayLoggedIn>
+              <div className="h-8 rounded-md bg-muted/25" />
+            </AuthDisplayLoggedIn>
+            <AuthDisplayLoggedOut>
+              <SidebarSignInButton
+                authDisabled={false}
+                onNavigate={onNavigate}
+                onSignIn={onSignIn}
+              />
+            </AuthDisplayLoggedOut>
+          </>
         ) : (
           <SidebarSignInButton
             authDisabled={authDisabled}

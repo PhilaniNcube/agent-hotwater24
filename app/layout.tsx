@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
+import { AuthDisplayPreHydrationHead } from "@/components/auth/auth-display";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { readonly children: ReactNode 
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} id="theme-init" />
+        <AuthDisplayPreHydrationHead />
       </head>
       <body className={`${geistSans.className} antialiased`}>
         <ThemeProvider>
