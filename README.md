@@ -1,6 +1,6 @@
-# Eve Chat Template
+# rve Chat Template
 
-A persisted Next.js chat template for [Eve](https://beta.eve.dev), built with shadcn/ui, Tailwind CSS, Streamdown, Better Auth, Drizzle, Neon, and Upstash Redis.
+A persisted Next.js chat template for [rve](https://beta.eve.dev), built with shadcn/ui, Tailwind CSS, Streamdown, Better Auth, Drizzle, Neon, and Upstash Redis.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?project-name=eve-chat-template&repository-name=eve-chat-template&repository-url=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Feve-chat-template%2Ftree%2Fmain&env=BETTER_AUTH_SECRET%2CNEXT_PUBLIC_VERCEL_APP_CLIENT_ID%2CVERCEL_APP_CLIENT_SECRET&envDescription=Neon+provisions+DATABASE_URL.+Upstash+Redis+provisions+rate-limit+storage.+Add+Better+Auth+secret+and+Sign+in+with+Vercel+credentials.+After+deploy%2C+run+production+migrations+from+the+setup+guide.&envLink=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Feve-chat-template%2Fblob%2Fmain%2Fdocs%2Fsetup-and-deploy.md&products=%5B%7B%22type%22%3A%22integration%22%2C%22protocol%22%3A%22storage%22%2C%22productSlug%22%3A%22neon%22%2C%22integrationSlug%22%3A%22neon%22%7D%2C%7B%22type%22%3A%22integration%22%2C%22protocol%22%3A%22storage%22%2C%22productSlug%22%3A%22upstash-kv%22%2C%22integrationSlug%22%3A%22upstash%22%7D%5D)
 
@@ -111,12 +111,12 @@ pnpm dev
 
 ## What Is Included
 
-- Text chat with an Eve agent through same-origin `/eve/v1/*` routes
+- Text chat with an eve agent through same-origin `/eve/v1/*` routes
 - Better Auth sign-in with Vercel
 - Mandatory Neon-backed chat history
 - Mandatory Upstash Redis rate limiting for authenticated chat sends
 - Drizzle schema and migrations under `lib/db`
-- Saved Eve session cursors and event snapshots
+- Saved eve session cursors and event snapshots
 - Sidebar history with delete and new-chat actions
 - Vercel Connect-backed Notion MCP connection
 - Composer-level connections menu
@@ -130,4 +130,4 @@ This template intentionally does not include Slack code, file uploads, Vercel Bl
 
 Edit the agent in `agent/agent.ts`. Its behavior is defined in `agent/instructions.md`, and tools live in `agent/tools/`.
 
-The browser talks to Eve with `useEveAgent()` from `eve/react`; the app stores Eve stream events and session state so `/chat/[id]` can resume the same durable conversation after refresh.
+The browser talks to eve with `useEveAgent()` from `eve/react`; the app stores eve stream events and session state so `/chat/[id]` can resume the same durable conversation after refresh.
