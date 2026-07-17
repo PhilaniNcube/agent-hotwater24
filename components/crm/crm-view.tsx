@@ -18,7 +18,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState, useMemo } from "react";
-import { getQuoteAction, listQuotesAction } from "@/app/actions/quotes";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -69,16 +69,27 @@ function DashboardView() {
     setList({ status: "loading" });
 
     void (async () => {
-      const result = await listQuotesAction(500);
+      try {
+        const res = await fetch("/api/crm/quotes?limit=500");
+        const result = await res.json();
 
-      if (cancelled) {
-        return;
-      }
+        if (cancelled) {
+          return;
+        }
 
-      if (result.ok) {
-        setList({ status: "ready", quotes: result.quotes });
-      } else {
-        setList({ status: "error", message: result.error });
+        if (result.ok) {
+          setList({ status: "ready", quotes: result.quotes });
+        } else {
+          setList({ status: "error", message: result.error });
+        }
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        setList({
+          status: "error",
+          message: error instanceof Error ? error.message : "Failed to load quotes.",
+        });
       }
     })();
 
@@ -310,16 +321,27 @@ function QuotesView() {
     setList({ status: "loading" });
 
     void (async () => {
-      const result = await listQuotesAction(200);
+      try {
+        const res = await fetch("/api/crm/quotes?limit=200");
+        const result = await res.json();
 
-      if (cancelled) {
-        return;
-      }
+        if (cancelled) {
+          return;
+        }
 
-      if (result.ok) {
-        setList({ status: "ready", quotes: result.quotes });
-      } else {
-        setList({ status: "error", message: result.error });
+        if (result.ok) {
+          setList({ status: "ready", quotes: result.quotes });
+        } else {
+          setList({ status: "error", message: result.error });
+        }
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        setList({
+          status: "error",
+          message: error instanceof Error ? error.message : "Failed to load quotes.",
+        });
       }
     })();
 
@@ -338,19 +360,40 @@ function QuotesView() {
     setDetail({ status: "loading", id: quoteId });
 
     void (async () => {
-      const result = await getQuoteAction(quoteId);
+      try {
+        const res = await fetch(`/api/crm/quotes/${quoteId}`);
+        const result = await res.json();
 
-      if (cancelled) {
-        return;
-      }
+        if (cancelled) {
+          return;
+        }
 
-      if (result.ok) {
-        setDetail({ status: "ready", quote: result.quote });
-      } else {
+        if (res.status === 404) {
+          setDetail({
+            status: "error",
+            id: quoteId,
+            message: `Quote ${quoteId} not found.`,
+          });
+          return;
+        }
+
+        if (result.ok) {
+          setDetail({ status: "ready", quote: result.quote });
+        } else {
+          setDetail({
+            status: "error",
+            id: quoteId,
+            message: result.error,
+          });
+        }
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
         setDetail({
           status: "error",
           id: quoteId,
-          message: result.notFound ? `Quote ${quoteId} not found.` : result.error,
+          message: error instanceof Error ? error.message : "Failed to load quote.",
         });
       }
     })();
@@ -370,15 +413,33 @@ function QuotesView() {
       setDetail({ status: "loading", id: qid });
 
       void (async () => {
-        const result = await getQuoteAction(qid);
+        try {
+          const res = await fetch(`/api/crm/quotes/${qid}`);
+          const result = await res.json();
 
-        if (result.ok) {
-          setDetail({ status: "ready", quote: result.quote });
-        } else {
+          if (res.status === 404) {
+            setDetail({
+              status: "error",
+              id: qid,
+              message: `Quote ${qid} not found.`,
+            });
+            return;
+          }
+
+          if (result.ok) {
+            setDetail({ status: "ready", quote: result.quote });
+          } else {
+            setDetail({
+              status: "error",
+              id: qid,
+              message: result.error,
+            });
+          }
+        } catch (error) {
           setDetail({
             status: "error",
             id: qid,
-            message: result.notFound ? `Quote ${qid} not found.` : result.error,
+            message: error instanceof Error ? error.message : "Failed to load quote.",
           });
         }
       })();
