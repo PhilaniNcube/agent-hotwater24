@@ -2,7 +2,7 @@
 
 import {
   LayoutDashboardIcon,
-  UsersIcon,
+  QuoteIcon,
   HandshakeIcon,
   SettingsIcon,
   PanelLeftCloseIcon,
@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 
 const VIEW_ICON: Record<CrmView, typeof LayoutDashboardIcon> = {
   dashboard: LayoutDashboardIcon,
-  contacts: UsersIcon,
+  quotes: QuoteIcon,
   deals: HandshakeIcon,
   settings: SettingsIcon,
 };

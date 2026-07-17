@@ -1,14 +1,21 @@
 "use client";
 
 import {
+  ArrowLeftIcon,
   ArrowUpRightIcon,
-  MailIcon,
-  PhoneIcon,
   BuildingIcon,
+  CalendarIcon,
+  CheckCircle2Icon,
   HandshakeIcon,
+  Loader2Icon,
+  MailIcon,
+  MapPinIcon,
+  PhoneIcon,
   TrendingUpIcon,
   UsersIcon,
 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { getQuoteAction, listQuotesAction } from "@/app/actions/quotes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,13 +34,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { CrmView } from "@/lib/crm/nav";
+import {
+  formatQuoteLocation,
+  formatQuoteName,
+  type QuoteListItem,
+  type QuoteRow,
+} from "@/lib/crm/quotes";
+import { cn } from "@/lib/utils";
 
 export function CrmView({ view }: { readonly view: CrmView }) {
   switch (view) {
     case "dashboard":
       return <DashboardView />;
-    case "contacts":
-      return <ContactsView />;
+    case "quotes":
+      return <QuotesView />;
     case "deals":
       return <DealsView />;
     case "settings":
@@ -107,51 +121,357 @@ function DashboardView() {
   );
 }
 
-function ContactsView() {
-  const rows = MOCK_CONTACTS;
+type QuoteListState =
+  | { status: "loading" }
+  | { status: "error"; message: string }
+  | { status: "ready"; quotes: QuoteListItem[] };
+
+type QuoteDetailState =
+  | { status: "idle" }
+  | { status: "loading"; id: number }
+  | { status: "error"; id: number; message: string }
+  | { status: "ready"; quote: QuoteRow };
+
+function QuotesView() {
+  const [list, setList] = useState<QuoteListState>({ status: "loading" });
+  const [selected, setSelected] = useState<QuoteDetailState>({ status: "idle" });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    setList({ status: "loading" });
+
+    void (async () => {
+      const result = await listQuotesAction(200);
+
+      if (cancelled) {
+        return;
+      }
+
+      if (result.ok) {
+        setList({ status: "ready", quotes: result.quotes });
+      } else {
+        setList({ status: "error", message: result.error });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleSelect = useCallback((quoteId: number) => {
+    setSelected({ status: "loading", id: quoteId });
+
+    void (async () => {
+      const result = await getQuoteAction(quoteId);
+
+      if (result.ok) {
+        setSelected({ status: "ready", quote: result.quote });
+      } else {
+        setSelected({
+          status: "error",
+          id: quoteId,
+          message: result.error,
+        });
+      }
+    })();
+  }, []);
+
+  const quoteDetailId =
+    selected.status === "ready"
+      ? selected.quote.id
+      : selected.status === "error"
+        ? selected.id
+        : null;
+
+  if (selected.status !== "idle") {
+    return (
+      <QuoteDetailView
+        state={selected}
+        onBack={() => setSelected({ status: "idle" })}
+        onRetry={
+          quoteDetailId === null
+            ? () => {}
+            : () => handleSelect(quoteDetailId)
+        }
+      />
+    );
+  }
 
   return (
     <div className="flex h-full flex-col gap-6 overflow-y-auto px-6 py-6 lg:px-10">
       <PageHeader
-        description="Manage the people in your workspace."
-        title="Contacts"
+        description="Quote requests submitted through Hotwater24."
+        title="Quotes"
       />
       <Card className="py-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Company</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Owner</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((row) => (
-              <TableRow key={row.id}>
-                <TableCell className="font-medium">{row.name}</TableCell>
-                <TableCell>
-                  <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                    <BuildingIcon className="size-3.5" />
-                    {row.company}
-                  </span>
-                </TableCell>
-                <TableCell className="text-muted-foreground">{row.email}</TableCell>
-                <TableCell className="text-muted-foreground">{row.phone}</TableCell>
-                <TableCell>
-                  <StatusBadge status={row.status} />
-                </TableCell>
-                <TableCell className="text-right text-muted-foreground">
-                  {row.owner}
-                </TableCell>
+        {list.status === "loading" ? (
+          <div className="flex items-center justify-center gap-2 px-6 py-10 text-sm text-muted-foreground">
+            <Loader2Icon className="size-4 animate-spin" />
+            Loading quotes...
+          </div>
+        ) : list.status === "error" ? (
+          <div className="px-6 py-10 text-sm text-destructive">
+            {list.message}
+          </div>
+        ) : list.quotes.length === 0 ? (
+          <div className="px-6 py-10 text-sm text-muted-foreground">
+            No quotes yet. New quote requests will appear here.
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>#</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Geyser</TableHead>
+                <TableHead>Submitted</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Source</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {list.quotes.map((quote) => (
+                <TableRow
+                  className="cursor-pointer"
+                  key={quote.id}
+                  onClick={() => handleSelect(quote.id)}
+                >
+                  <TableCell className="text-muted-foreground">
+                    {quote.id}
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    {formatQuoteName(quote)}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {formatQuoteLocation(quote)}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {quote.geyserSize ? `${quote.geyserSize}L` : "—"}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {formatDate(quote.created_at)}
+                  </TableCell>
+                  <TableCell>
+                    <ContactedBadge contacted={quote.contacted} />
+                  </TableCell>
+                  <TableCell>
+                    {quote.source ? (
+                      <Badge variant="outline">{quote.source}</Badge>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </Card>
     </div>
+  );
+}
+
+type QuoteDetailActiveState = Exclude<QuoteDetailState, { status: "idle" }>;
+
+function QuoteDetailView({
+  state,
+  onBack,
+  onRetry,
+}: {
+  readonly state: QuoteDetailActiveState;
+  readonly onBack: () => void;
+  readonly onRetry: () => void;
+}) {
+  return (
+    <div className="flex h-full flex-col gap-6 overflow-y-auto px-6 py-6 lg:px-10">
+      <div className="flex items-center justify-between gap-3">
+        <Button
+          className="gap-1.5"
+          onClick={onBack}
+          size="sm"
+          type="button"
+          variant="ghost"
+        >
+          <ArrowLeftIcon className="size-4" />
+          Back to quotes
+        </Button>
+        {state.status === "ready" ? (
+          <Badge variant="secondary">Quote #{state.quote.id}</Badge>
+        ) : null}
+      </div>
+
+      {state.status === "loading" ? (
+        <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
+          <Loader2Icon className="size-4 animate-spin" />
+          Loading quote...
+        </div>
+      ) : state.status === "error" ? (
+        <Card>
+          <CardContent className="flex flex-col items-start gap-2 py-6">
+            <p className="text-sm text-destructive">{state.message}</p>
+            <Button onClick={onRetry} size="sm" variant="outline">
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <QuoteDetail quote={state.quote} />
+      )}
+    </div>
+  );
+}
+
+function QuoteDetail({ quote }: { readonly quote: QuoteRow }) {
+  const adults = quote.adults ?? 0;
+  const teenagers = quote.teenagers ?? 0;
+  const children = quote.children ?? 0;
+  const familyTotal = adults + teenagers + children;
+  const solutionType = quote.completeSolution
+    ? "Complete solution"
+    : quote.offGrid
+      ? "Off-grid"
+      : "Standard";
+
+  return (
+    <>
+      <Card>
+        <CardHeader className="flex-row items-start justify-between gap-3">
+          <div className="space-y-1">
+            <CardTitle className="text-xl">
+              {formatQuoteName(quote)}
+            </CardTitle>
+            <CardDescription>
+              Quote #{quote.id} · submitted {formatDate(quote.created_at)}
+            </CardDescription>
+          </div>
+          <ContactedBadge contacted={quote.contacted} />
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <DetailItem
+            icon={MailIcon}
+            label="Email"
+            value={quote.email ?? "—"}
+          />
+          <DetailItem
+            icon={PhoneIcon}
+            label="Phone"
+            value={quote.telephoneNumber ?? "—"}
+          />
+          <DetailItem
+            icon={MapPinIcon}
+            label="Location"
+            value={formatQuoteLocation(quote)}
+          />
+          <DetailItem
+            icon={CalendarIcon}
+            label="Preferred contact"
+            value={
+              [quote.contactDay, quote.contactTime].filter(Boolean).join(" · ") ||
+              "—"
+            }
+          />
+          <DetailItem
+            icon={BuildingIcon}
+            label="House type"
+            value={quote.houseType ?? "—"}
+          />
+          <DetailItem
+            icon={UsersIcon}
+            label="Household"
+            value={`${familyTotal} (${adults} adults · ${teenagers} teens · ${children} kids)`}
+          />
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Geyser requirements</CardTitle>
+            <CardDescription>
+              Current setup and the solution the customer wants.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <Row label="Geyser size" value={quote.geyserSize ? `${quote.geyserSize} L` : "—"} />
+            <Row label="Electric geysers" value={String(quote.electric_geysers ?? 0)} />
+            <Row label="Bathrooms" value={String(quote.bathrooms ?? 0)} />
+            <Row
+              label="Current sources"
+              value={[
+                quote.electricGeyser ? "Electric" : null,
+                quote.solarGeyser ? "Solar" : null,
+                quote.gasGeyser ? "Gas" : null,
+                quote.otherGeyser ? String(quote.otherGeyser) : null,
+              ]
+                .filter(Boolean)
+                .join(", ") || "—"}
+            />
+            <Row label="Solution type" value={solutionType} />
+            <Row
+              label="Install location"
+              value={
+                quote.locateOutside === null
+                  ? "—"
+                  : quote.locateOutside
+                    ? "Outside"
+                    : "Inside"
+              }
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Gas &amp; financing</CardTitle>
+            <CardDescription>Cross-sell hooks and payment context.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <Row
+              label="Gas stove"
+              value={formatBool(quote.gasStove)}
+            />
+            <Row
+              label="Gas heating"
+              value={formatBool(quote.gasHeating)}
+            />
+            <Row
+              label="Gas water heating"
+              value={formatBool(quote.gasWaterHeating)}
+            />
+            <Row
+              label="Other gas use"
+              value={quote.otherGasUse ?? "—"}
+            />
+            <Row
+              label="Borehole water"
+              value={formatBool(quote.borehole_water)}
+            />
+            <Row label="Financing" value={quote.financing ?? "—"} />
+            <Row
+              label="Monthly savings"
+              value={quote.monthlySavings ? `R ${quote.monthlySavings}` : "—"}
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      {quote.comments ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Comments</CardTitle>
+            <CardDescription>Free-text notes from the customer.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+              {quote.comments}
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
+    </>
   );
 }
 
@@ -178,7 +498,7 @@ function DealsView() {
             <Card key={stage.stage} className="gap-3">
               <CardHeader className="flex-row items-center justify-between">
                 <CardTitle className="text-sm">{stage.stage}</CardTitle>
-                <span className={`size-2.5 rounded-full ${stage.color}`} />
+                <span className={cn("size-2.5 rounded-full", stage.color)} />
               </CardHeader>
               <CardContent className="space-y-2">
                 <p className="text-xl font-semibold">${value}</p>
@@ -256,7 +576,13 @@ function SettingsView() {
   );
 }
 
-function PageHeader({ title, description }: { readonly title: string; readonly description: string }) {
+function PageHeader({
+  title,
+  description,
+}: {
+  readonly title: string;
+  readonly description: string;
+}) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div className="space-y-1">
@@ -298,82 +624,75 @@ function StatCard({
   );
 }
 
-function StatusBadge({ status }: { readonly status: string }) {
-  const variant =
-    status === "Customer"
-      ? "default"
-      : status === "Lead"
-        ? "secondary"
-        : "outline";
-  return <Badge variant={variant as "default" | "secondary" | "outline"}>{status}</Badge>;
-}
-
-function Row({ label, value }: { readonly label: string; readonly value: string }) {
+function DetailItem({
+  icon: Icon,
+  label,
+  value,
+}: {
+  readonly icon: typeof MailIcon;
+  readonly label: string;
+  readonly value: string;
+}) {
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium">{value}</span>
+    <div className="flex items-start gap-2">
+      <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+        <Icon className="size-4" />
+      </span>
+      <div className="min-w-0 space-y-0.5">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="truncate text-sm font-medium">{value}</p>
+      </div>
     </div>
   );
 }
 
-type ContactRow = {
-  readonly id: string;
-  readonly name: string;
-  readonly company: string;
-  readonly email: string;
-  readonly phone: string;
-  readonly status: string;
-  readonly owner: string;
-};
+function ContactedBadge({ contacted }: { readonly contacted: boolean | null }) {
+  if (contacted === null) {
+    return <Badge variant="outline">Unknown</Badge>;
+  }
 
-const MOCK_CONTACTS: ContactRow[] = [
-  {
-    id: "1",
-    name: "Avery Quinn",
-    company: "Northwind Labs",
-    email: "avery@northwind.io",
-    phone: "+1 415 555 0132",
-    status: "Customer",
-    owner: "You",
-  },
-  {
-    id: "2",
-    name: "Mateo Alvarez",
-    company: "Brightline",
-    email: "mateo@brightline.co",
-    phone: "+1 212 555 0190",
-    status: "Lead",
-    owner: "Priya",
-  },
-  {
-    id: "3",
-    name: "Sofia Nakamura",
-    company: "Atlas Robotics",
-    email: "sofia@atlasrobotics.com",
-    phone: "+1 650 555 0148",
-    status: "Working",
-    owner: "You",
-  },
-  {
-    id: "4",
-    name: "Liam O'Connor",
-    company: "Cedar & Co.",
-    email: "liam@cedarco.com",
-    phone: "+1 305 555 0166",
-    status: "Customer",
-    owner: "Devon",
-  },
-  {
-    id: "5",
-    name: "Maya Patel",
-    company: "Helios Energy",
-    email: "maya@helios.energy",
-    phone: "+1 646 555 0177",
-    status: "Lead",
-    owner: "You",
-  },
-];
+  return contacted ? (
+    <Badge className="gap-1">
+      <CheckCircle2Icon className="size-3" />
+      Contacted
+    </Badge>
+  ) : (
+    <Badge variant="secondary">New</Badge>
+  );
+}
+
+function Row({ label, value }: { readonly label: string; readonly value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="text-right font-medium">{value}</span>
+    </div>
+  );
+}
+
+function formatDate(value: string | null): string {
+  if (!value) {
+    return "—";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+  }).format(date);
+}
+
+function formatBool(value: boolean | null): string {
+  if (value === null) {
+    return "—";
+  }
+
+  return value ? "Yes" : "No";
+}
 
 type DealRow = {
   readonly id: string;

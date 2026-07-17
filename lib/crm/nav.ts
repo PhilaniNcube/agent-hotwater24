@@ -1,4 +1,4 @@
-export type CrmView = "dashboard" | "contacts" | "deals" | "settings";
+export type CrmView = "dashboard" | "quotes" | "deals" | "settings";
 
 export const CRM_VIEW_STORAGE_KEY = "hotwater-crm-view";
 export const CRM_NAV_ITEMS: ReadonlyArray<{
@@ -6,8 +6,8 @@ export const CRM_NAV_ITEMS: ReadonlyArray<{
   readonly label: string;
   readonly description: string;
 }> = [
+  { id: "quotes", label: "Quotes", description: "Hotwater24 quote requests" },
   { id: "dashboard", label: "Dashboard", description: "Overview of your pipeline" },
-  { id: "contacts", label: "Contacts", description: "Manage people" },
   { id: "deals", label: "Deals", description: "Track opportunities" },
   { id: "settings", label: "Settings", description: "Workspace preferences" },
 ];
