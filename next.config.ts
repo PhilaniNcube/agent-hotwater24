@@ -3,6 +3,7 @@ import { withEve } from "eve/next";
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  partialPrefetching: true,
   turbopack: {
     root: process.cwd(),
   },
