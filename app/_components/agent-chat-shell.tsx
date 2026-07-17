@@ -65,7 +65,6 @@ export function AgentChatShell({
   readonly setupStatus: SetupStatus;
   readonly viewer: Viewer | null;
 }) {
-  const { crmView, setCrmView } = useCrmView();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
   const [chatPanelOpen, setChatPanelOpen] = useState(true);
@@ -166,9 +165,24 @@ export function AgentChatShell({
     activeChatIdRef.current = null;
     setActiveChatId(null);
     setMobileSidebarOpen(false);
-    const targetPath = crmView === "dashboard" ? "/" : `/${crmView}`;
+
+    // Dynamically retrieve the current view from window.location in client handler
+    const path = window.location.pathname;
+    let currentView = "dashboard";
+    if (path.startsWith("/quotes")) {
+      currentView = "quotes";
+    } else if (path.startsWith("/deals")) {
+      currentView = "deals";
+    } else if (path.startsWith("/settings")) {
+      currentView = "settings";
+    } else if (path.startsWith("/chat/")) {
+      const searchParams = new URLSearchParams(window.location.search);
+      currentView = searchParams.get("view") || "dashboard";
+    }
+
+    const targetPath = currentView === "dashboard" ? "/" : `/${currentView}`;
     router.push(targetPath, { scroll: false });
-  }, [router, crmView]);
+  }, [router]);
 
   const handleSidebarNavigate = useCallback((chatId?: string | null) => {
     setMobileSidebarOpen(false);
@@ -316,8 +330,6 @@ export function AgentChatShell({
     onSignIn: () => requestSignIn(),
     setupStatus: setupStatusState,
     viewer: viewerState,
-    activeCrmView: crmView,
-    onSelectView: setCrmView,
   };
 
   return (
@@ -380,7 +392,7 @@ export function AgentChatShell({
           </header>
 
           <Suspense fallback={null}>
-            <CrmStage crmView={crmView} />
+            <CrmStage />
           </Suspense>
         </section>
 
@@ -465,8 +477,6 @@ type SidebarSharedProps = {
   readonly onSignIn?: () => void;
   readonly setupStatus: SetupStatus;
   readonly viewer: Viewer | null;
-  readonly activeCrmView: CrmViewType;
-  readonly onSelectView: (view: CrmViewType) => void;
 };
 
 function useCrmView() {
@@ -508,9 +518,13 @@ function DesktopSidebar({
 }: SidebarSharedProps & {
   readonly onToggleSidebar: () => void;
 }) {
+  const { crmView, setCrmView } = useCrmView();
+
   return (
     <CrmNavSidebar
       {...props}
+      activeCrmView={crmView}
+      onSelectView={setCrmView}
       onToggleSidebar={onToggleSidebar}
     />
   );
@@ -522,19 +536,24 @@ function MobileSidebar({
 }: SidebarSharedProps & {
   readonly onClose: () => void;
 }) {
+  const { crmView, setCrmView } = useCrmView();
+
   return (
     <CrmNavSidebar
       {...props}
+      activeCrmView={crmView}
       className="w-[84vw] max-w-80"
       onSelectView={(view) => {
-        props.onSelectView(view);
+        setCrmView(view);
         onClose();
       }}
     />
   );
 }
 
-function CrmStage({ crmView }: { readonly crmView: CrmViewType }) {
+function CrmStage() {
+  const { crmView } = useCrmView();
+
   return <CrmView view={crmView} />;
 }
 
