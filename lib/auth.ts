@@ -29,7 +29,7 @@ export const auth = betterAuth({
     protocol: authProtocol,
   },
   database: drizzleAdapter(db, {
-    provider: "pg",
+    provider: "sqlite",
   }),
   account: {
     encryptOAuthTokens: true,
@@ -39,7 +39,7 @@ export const auth = betterAuth({
       allowDifferentEmails: true,
     },
   },
-  secret: betterAuthSecret ?? "eve-chat-template-unconfigured-secret",
+  secret: betterAuthSecret ?? "agent-hotwater24-unconfigured-secret",
   advanced: {
     database: {
       generateId: () => randomUUID(),
