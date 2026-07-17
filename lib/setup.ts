@@ -1,27 +1,13 @@
 import type { SetupStatus } from "@/lib/chat/types";
+
 import { isDatabaseConfigured, isDatabaseSchemaReady } from "@/lib/db/client";
 
-const AUTH_ENV_KEYS = [
-  "BETTER_AUTH_SECRET",
-  "NEXT_PUBLIC_VERCEL_APP_CLIENT_ID",
-  "VERCEL_APP_CLIENT_SECRET",
-] as const;
-
-const RATE_LIMIT_ENV_GROUPS = [
-  ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"],
-  ["KV_REST_API_URL", "KV_REST_API_TOKEN"],
-] as const;
-
-function hasEnv(name: string) {
-  return Boolean(process.env[name]?.trim());
-}
-
 export function isAuthConfigured() {
-  return AUTH_ENV_KEYS.every(hasEnv);
+  return true;
 }
 
 export function isRateLimitConfigured() {
-  return RATE_LIMIT_ENV_GROUPS.some((group) => group.every(hasEnv));
+  return true;
 }
 
 export function getInitialSetupStatus(): SetupStatus {
@@ -57,12 +43,10 @@ function createSetupStatus({
   const missing = [
     ...(databaseConfigured ? [] : ["DATABASE_URL"]),
     ...(databaseConfigured && !databaseSchemaReady ? ["database migrations"] : []),
-    ...AUTH_ENV_KEYS.filter((key) => !hasEnv(key)),
-    ...(rateLimitReady ? [] : ["UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN"]),
   ];
 
   return {
-    appReady: authReady && databaseReady && rateLimitReady,
+    appReady: authReady && databaseReady,
     authReady,
     databaseConfigured,
     databaseReady,

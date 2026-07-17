@@ -4,7 +4,7 @@ import type { HandleMessageStreamEvent, SessionState } from "eve/client";
 import { isChatTurnSettledEvent } from "@/lib/chat/events";
 import type { ActiveChat, ChatListItem, ChatListPage } from "@/lib/chat/types";
 import { createFallbackTitle, DEFAULT_CHAT_TITLE } from "@/lib/chat/title";
-import { chat, chatEvent } from "@/lib/db/schema";
+import { chat, chatEvent, user } from "@/lib/db/schema";
 import { db } from "@/lib/db/client";
 
 const CHAT_HISTORY_PAGE_SIZE = 20;
@@ -84,6 +84,18 @@ export async function createChat(
     readonly pendingUserMessage?: string;
   } = {},
 ) {
+  if (userId === "anonymous") {
+    await db
+      .insert(user)
+      .values({
+        id: "anonymous",
+        name: "Anonymous",
+        email: "anonymous@local",
+        emailVerified: true,
+      })
+      .onConflictDoNothing();
+  }
+
   const pendingMessage = pendingUserMessage?.trim();
   const pendingMessageCreatedAt = pendingMessage ? new Date() : null;
   const [row] = await db

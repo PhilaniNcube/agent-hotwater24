@@ -32,6 +32,9 @@ importers:
       '@streamdown/mermaid':
         specifier: 1.0.2
         version: 1.0.2(react@19.2.6)
+      '@supabase/supabase-js':
+        specifier: ^2.110.7
+        version: 2.110.7
       '@tailwindcss/postcss':
         specifier: 4.3.0
         version: 4.3.0
@@ -43,7 +46,7 @@ importers:
         version: 2.0.1(next@16.2.10(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)
       '@vercel/connect':
         specifier: 0.2.4
-        version: 0.2.4(ai@7.0.0-canary.171(zod@4.4.3))(better-auth@1.5.5(drizzle-kit@0.31.9)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1))(mongodb@7.3.0(@mongodb-js/zstd@7.0.0))(next@16.2.10(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(eve@0.22.1(@libsql/client@0.17.4)(@upstash/redis@1.38.0)(ai@7.0.0-canary.171(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1))(jiti@2.7.0)(just-bash@3.1.0)(microsandbox@0.5.7)(mongodb@7.3.0(@mongodb-js/zstd@7.0.0)))
+        version: 0.2.4(ai@7.0.0-canary.171(zod@4.4.3))(better-auth@1.5.5(drizzle-kit@0.31.9)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1))(mongodb@7.3.0(@mongodb-js/zstd@7.0.0))(next@16.2.10(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(eve@0.22.1(@libsql/client@0.17.4)(@upstash/redis@1.38.0)(ai@7.0.0-canary.171(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1))(jiti@2.7.0)(just-bash@3.1.0)(microsandbox@0.5.7)(mongodb@7.3.0(@mongodb-js/zstd@7.0.0)))
       '@vercel/speed-insights':
         specifier: 2.0.0
         version: 2.0.0(next@16.2.10(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)
@@ -52,7 +55,7 @@ importers:
         version: 7.0.0-canary.171(zod@4.4.3)
       better-auth:
         specifier: 1.5.5
-        version: 1.5.5(drizzle-kit@0.31.9)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1))(mongodb@7.3.0(@mongodb-js/zstd@7.0.0))(next@16.2.10(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+        version: 1.5.5(drizzle-kit@0.31.9)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1))(mongodb@7.3.0(@mongodb-js/zstd@7.0.0))(next@16.2.10(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       class-variance-authority:
         specifier: 0.7.1
         version: 0.7.1
@@ -64,16 +67,19 @@ importers:
         version: 1.1.1(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       drizzle-orm:
         specifier: 0.45.1
-        version: 0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1)
+        version: 0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1)
       eve:
         specifier: ^0.22.1
-        version: 0.22.1(@libsql/client@0.17.4)(@upstash/redis@1.38.0)(ai@7.0.0-canary.171(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1))(jiti@2.7.0)(just-bash@3.1.0)(microsandbox@0.5.7)(mongodb@7.3.0(@mongodb-js/zstd@7.0.0))
+        version: 0.22.1(@libsql/client@0.17.4)(@upstash/redis@1.38.0)(ai@7.0.0-canary.171(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1))(jiti@2.7.0)(just-bash@3.1.0)(microsandbox@0.5.7)(mongodb@7.3.0(@mongodb-js/zstd@7.0.0))
       lucide-react:
         specifier: 1.16.0
         version: 1.16.0(react@19.2.6)
       next:
         specifier: 16.2.10
         version: 16.2.10(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      postgres:
+        specifier: ^3.4.9
+        version: 3.4.9
       radix-ui:
         specifier: 1.4.3
         version: 1.4.3(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -1902,6 +1908,33 @@ packages:
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
 
+  '@supabase/auth-js@2.110.7':
+    resolution: {integrity: sha512-M5Bpl4hCv6kHcOO/xM06Dyfg1mYLHljMkp1plhzG9IRZPc3czvyMsSN1XpL5+GKisOKM3lSN59zhpcm6sMVXfA==}
+    engines: {node: '>=22.0.0'}
+
+  '@supabase/functions-js@2.110.7':
+    resolution: {integrity: sha512-megYmexlYEoR/0qlsr4Snh9wtzAodO7MAri3NMevZrXzNvQRKlvmTcSBoKGLQEPDakgDZMqbMdf9DwoZz6qfoA==}
+    engines: {node: '>=22.0.0'}
+
+  '@supabase/phoenix@0.4.5':
+    resolution: {integrity: sha512-aAn9H9ovVyeApKy11OWOrrOGq8DV68yWeH4ud2lN9fzn4aO8Zb5GLL9m1pUg9nLqIcT+ZDfAcsZe0E/nqdv2lw==}
+
+  '@supabase/postgrest-js@2.110.7':
+    resolution: {integrity: sha512-ban6YV0djhVaqVYezlOARKLIuOBSvLLhyQVZjA2nxPrtswhxHCl1+gI4giFgI9ATQAaMNbUZb4JXiuL5lEA/5g==}
+    engines: {node: '>=22.0.0'}
+
+  '@supabase/realtime-js@2.110.7':
+    resolution: {integrity: sha512-AMtZjyFA2gsmjuxopPNS/sRznLQHG0Ht5x+ytTPTOh3vAcOTUlVRLx7gW4/CONNnbb3PKOkE+HmM35HOSbmomQ==}
+    engines: {node: '>=22.0.0'}
+
+  '@supabase/storage-js@2.110.7':
+    resolution: {integrity: sha512-2tcDE8cjEDy1uKxKavBpKQod1JdMV1jDXQag48TCa+kycmJOltc0yVabC0BUlhOwAl6WykXU2aOsH3ELMtZrmQ==}
+    engines: {node: '>=22.0.0'}
+
+  '@supabase/supabase-js@2.110.7':
+    resolution: {integrity: sha512-AnfO3A230Shy6RMO7cya3Wl1OcXnABJrzH8vP+fY7/RFjhzcchB7DjKkkTIAntlwekD+GkSFzEvt2tC+D4Fp8w==}
+    engines: {node: '>=22.0.0'}
+
   '@superradcompany/microsandbox-darwin-arm64@0.5.7':
     resolution: {integrity: sha512-/ZnoBI0l9mYvPrwS8xPQ5L+c5B6U+aescZsiGXbjIvW9m/2rvMvi+tvl/Rj/pISHME8r2/2AQTqiFk4wvVxbcQ==}
     engines: {node: '>= 22'}
@@ -3045,6 +3078,10 @@ packages:
     resolution: {integrity: sha512-B4FFZ6q/T2jhhksgkbEW3HBvWIfDW85snkQgawt07S7J5QXTk6BkNV+0yAeZrM5QpMAdYlocGoljn0sJ/WQkFw==}
     engines: {node: '>=10.17.0'}
 
+  iceberg-js@0.8.1:
+    resolution: {integrity: sha512-1dhVQZXhcHje7798IVM+xoo/1ZdVfzOMIc8/rgVSijRK38EDqOJoGula9N/8ZI5RD8QTxNQtK/Gozpr+qUqRRA==}
+    engines: {node: '>=20.0.0'}
+
   iconv-lite@0.6.3:
     resolution: {integrity: sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw==}
     engines: {node: '>=0.10.0'}
@@ -3676,6 +3713,10 @@ packages:
     resolution: {integrity: sha512-9ZhXKM/rw350N1ovuWHbGxnGh/SNJ4cnxHiM0rxE4VN41wsg8P8zWn9hv/buK00RP4WvlOyr/RBDiptyxVbkZQ==}
     engines: {node: '>=0.10.0'}
 
+  postgres@3.4.9:
+    resolution: {integrity: sha512-GD3qdB0x1z9xgFI6cdRD6xu2Sp2WCOEoe3mtnyB5Ee0XrrL5Pe+e4CCnJrRMnL1zYtRDZmQQVbvOttLnKDLnaw==}
+    engines: {node: '>=12'}
+
   prebuild-install@7.1.3:
     resolution: {integrity: sha512-8Mf2cbV7x1cXPUILADGI3wuhfqWvtiLA1iclTDbFRZkgRQS0NqsPZphna9V+HyTEadheuPmjaJMsbzKQFOzLug==}
     engines: {node: '>=10'}
@@ -4291,12 +4332,12 @@ snapshots:
       nanostores: 1.3.0
       zod: 4.4.3
 
-  '@better-auth/drizzle-adapter@1.5.5(@better-auth/core@1.5.5(@better-auth/utils@0.3.1)(@better-fetch/fetch@1.1.21)(better-call@1.3.2(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.3.0))(@better-auth/utils@0.3.1)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1))':
+  '@better-auth/drizzle-adapter@1.5.5(@better-auth/core@1.5.5(@better-auth/utils@0.3.1)(@better-fetch/fetch@1.1.21)(better-call@1.3.2(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.3.0))(@better-auth/utils@0.3.1)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1))':
     dependencies:
       '@better-auth/core': 1.5.5(@better-auth/utils@0.3.1)(@better-fetch/fetch@1.1.21)(better-call@1.3.2(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.3.0)
       '@better-auth/utils': 0.3.1
     optionalDependencies:
-      drizzle-orm: 0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1)
+      drizzle-orm: 0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1)
 
   '@better-auth/kysely-adapter@1.5.5(@better-auth/core@1.5.5(@better-auth/utils@0.3.1)(@better-fetch/fetch@1.1.21)(better-call@1.3.2(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.3.0))(@better-auth/utils@0.3.1)(kysely@0.28.17)':
     dependencies:
@@ -5835,6 +5876,38 @@ snapshots:
       mermaid: 11.15.0
       react: 19.2.6
 
+  '@supabase/auth-js@2.110.7':
+    dependencies:
+      tslib: 2.8.1
+
+  '@supabase/functions-js@2.110.7':
+    dependencies:
+      tslib: 2.8.1
+
+  '@supabase/phoenix@0.4.5': {}
+
+  '@supabase/postgrest-js@2.110.7':
+    dependencies:
+      tslib: 2.8.1
+
+  '@supabase/realtime-js@2.110.7':
+    dependencies:
+      '@supabase/phoenix': 0.4.5
+      tslib: 2.8.1
+
+  '@supabase/storage-js@2.110.7':
+    dependencies:
+      iceberg-js: 0.8.1
+      tslib: 2.8.1
+
+  '@supabase/supabase-js@2.110.7':
+    dependencies:
+      '@supabase/auth-js': 2.110.7
+      '@supabase/functions-js': 2.110.7
+      '@supabase/postgrest-js': 2.110.7
+      '@supabase/realtime-js': 2.110.7
+      '@supabase/storage-js': 2.110.7
+
   '@superradcompany/microsandbox-darwin-arm64@0.5.7':
     optional: true
 
@@ -6169,13 +6242,13 @@ snapshots:
     dependencies:
       execa: 5.1.1
 
-  '@vercel/connect@0.2.4(ai@7.0.0-canary.171(zod@4.4.3))(better-auth@1.5.5(drizzle-kit@0.31.9)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1))(mongodb@7.3.0(@mongodb-js/zstd@7.0.0))(next@16.2.10(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(eve@0.22.1(@libsql/client@0.17.4)(@upstash/redis@1.38.0)(ai@7.0.0-canary.171(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1))(jiti@2.7.0)(just-bash@3.1.0)(microsandbox@0.5.7)(mongodb@7.3.0(@mongodb-js/zstd@7.0.0)))':
+  '@vercel/connect@0.2.4(ai@7.0.0-canary.171(zod@4.4.3))(better-auth@1.5.5(drizzle-kit@0.31.9)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1))(mongodb@7.3.0(@mongodb-js/zstd@7.0.0))(next@16.2.10(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(eve@0.22.1(@libsql/client@0.17.4)(@upstash/redis@1.38.0)(ai@7.0.0-canary.171(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1))(jiti@2.7.0)(just-bash@3.1.0)(microsandbox@0.5.7)(mongodb@7.3.0(@mongodb-js/zstd@7.0.0)))':
     dependencies:
       '@vercel/oidc': 3.6.1
     optionalDependencies:
       ai: 7.0.0-canary.171(zod@4.4.3)
-      better-auth: 1.5.5(drizzle-kit@0.31.9)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1))(mongodb@7.3.0(@mongodb-js/zstd@7.0.0))(next@16.2.10(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      eve: 0.22.1(@libsql/client@0.17.4)(@upstash/redis@1.38.0)(ai@7.0.0-canary.171(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1))(jiti@2.7.0)(just-bash@3.1.0)(microsandbox@0.5.7)(mongodb@7.3.0(@mongodb-js/zstd@7.0.0))
+      better-auth: 1.5.5(drizzle-kit@0.31.9)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1))(mongodb@7.3.0(@mongodb-js/zstd@7.0.0))(next@16.2.10(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      eve: 0.22.1(@libsql/client@0.17.4)(@upstash/redis@1.38.0)(ai@7.0.0-canary.171(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1))(jiti@2.7.0)(just-bash@3.1.0)(microsandbox@0.5.7)(mongodb@7.3.0(@mongodb-js/zstd@7.0.0))
 
   '@vercel/oidc@3.2.0': {}
 
@@ -6214,10 +6287,10 @@ snapshots:
 
   baseline-browser-mapping@2.10.37: {}
 
-  better-auth@1.5.5(drizzle-kit@0.31.9)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1))(mongodb@7.3.0(@mongodb-js/zstd@7.0.0))(next@16.2.10(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
+  better-auth@1.5.5(drizzle-kit@0.31.9)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1))(mongodb@7.3.0(@mongodb-js/zstd@7.0.0))(next@16.2.10(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
     dependencies:
       '@better-auth/core': 1.5.5(@better-auth/utils@0.3.1)(@better-fetch/fetch@1.1.21)(better-call@1.3.2(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.3.0)
-      '@better-auth/drizzle-adapter': 1.5.5(@better-auth/core@1.5.5(@better-auth/utils@0.3.1)(@better-fetch/fetch@1.1.21)(better-call@1.3.2(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.3.0))(@better-auth/utils@0.3.1)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1))
+      '@better-auth/drizzle-adapter': 1.5.5(@better-auth/core@1.5.5(@better-auth/utils@0.3.1)(@better-fetch/fetch@1.1.21)(better-call@1.3.2(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.3.0))(@better-auth/utils@0.3.1)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1))
       '@better-auth/kysely-adapter': 1.5.5(@better-auth/core@1.5.5(@better-auth/utils@0.3.1)(@better-fetch/fetch@1.1.21)(better-call@1.3.2(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.3.0))(@better-auth/utils@0.3.1)(kysely@0.28.17)
       '@better-auth/memory-adapter': 1.5.5(@better-auth/core@1.5.5(@better-auth/utils@0.3.1)(@better-fetch/fetch@1.1.21)(better-call@1.3.2(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.3.0))(@better-auth/utils@0.3.1)
       '@better-auth/mongo-adapter': 1.5.5(@better-auth/core@1.5.5(@better-auth/utils@0.3.1)(@better-fetch/fetch@1.1.21)(better-call@1.3.2(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.3.0))(@better-auth/utils@0.3.1)(mongodb@7.3.0(@mongodb-js/zstd@7.0.0))
@@ -6235,7 +6308,7 @@ snapshots:
       zod: 4.4.3
     optionalDependencies:
       drizzle-kit: 0.31.9
-      drizzle-orm: 0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1)
+      drizzle-orm: 0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1)
       mongodb: 7.3.0(@mongodb-js/zstd@7.0.0)
       next: 16.2.10(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       react: 19.2.6
@@ -6524,10 +6597,10 @@ snapshots:
 
   dayjs@1.11.21: {}
 
-  db0@0.3.4(@libsql/client@0.17.4)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1)):
+  db0@0.3.4(@libsql/client@0.17.4)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1)):
     optionalDependencies:
       '@libsql/client': 0.17.4
-      drizzle-orm: 0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1)
+      drizzle-orm: 0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1)
 
   debug@4.4.3:
     dependencies:
@@ -6580,13 +6653,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1):
+  drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1):
     optionalDependencies:
       '@libsql/client': 0.17.4
       '@neondatabase/serverless': 1.0.2
       '@types/pg': 8.20.0
       '@upstash/redis': 1.38.0
       kysely: 0.28.17
+      postgres: 3.4.9
       sql.js: 1.14.1
 
   end-of-stream@1.4.5:
@@ -6675,10 +6749,10 @@ snapshots:
 
   estree-util-is-identifier-name@3.0.0: {}
 
-  eve@0.22.1(@libsql/client@0.17.4)(@upstash/redis@1.38.0)(ai@7.0.0-canary.171(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1))(jiti@2.7.0)(just-bash@3.1.0)(microsandbox@0.5.7)(mongodb@7.3.0(@mongodb-js/zstd@7.0.0)):
+  eve@0.22.1(@libsql/client@0.17.4)(@upstash/redis@1.38.0)(ai@7.0.0-canary.171(zod@4.4.3))(dotenv@17.4.2)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1))(jiti@2.7.0)(just-bash@3.1.0)(microsandbox@0.5.7)(mongodb@7.3.0(@mongodb-js/zstd@7.0.0)):
     dependencies:
       ai: 7.0.0-canary.171(zod@4.4.3)
-      nitro: 3.0.260610-beta(@libsql/client@0.17.4)(@upstash/redis@1.38.0)(dotenv@17.4.2)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1))(jiti@2.7.0)(mongodb@7.3.0(@mongodb-js/zstd@7.0.0))
+      nitro: 3.0.260610-beta(@libsql/client@0.17.4)(@upstash/redis@1.38.0)(dotenv@17.4.2)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1))(jiti@2.7.0)(mongodb@7.3.0(@mongodb-js/zstd@7.0.0))
     optionalDependencies:
       just-bash: 3.1.0
       microsandbox: 0.5.7
@@ -6928,6 +7002,8 @@ snapshots:
   httpxy@0.5.4: {}
 
   human-signals@2.1.0: {}
+
+  iceberg-js@0.8.1: {}
 
   iconv-lite@0.6.3:
     dependencies:
@@ -7616,11 +7692,11 @@ snapshots:
 
   nf3@0.3.21: {}
 
-  nitro@3.0.260610-beta(@libsql/client@0.17.4)(@upstash/redis@1.38.0)(dotenv@17.4.2)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1))(jiti@2.7.0)(mongodb@7.3.0(@mongodb-js/zstd@7.0.0)):
+  nitro@3.0.260610-beta(@libsql/client@0.17.4)(@upstash/redis@1.38.0)(dotenv@17.4.2)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1))(jiti@2.7.0)(mongodb@7.3.0(@mongodb-js/zstd@7.0.0)):
     dependencies:
       consola: 3.4.2
       crossws: 0.4.9(srvx@0.11.21)
-      db0: 0.3.4(@libsql/client@0.17.4)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1))
+      db0: 0.3.4(@libsql/client@0.17.4)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1))
       env-runner: 0.1.16
       h3: 2.0.1-rc.22(crossws@0.4.9(srvx@0.11.21))
       hookable: 6.1.1
@@ -7631,7 +7707,7 @@ snapshots:
       rolldown: 1.1.5
       srvx: 0.11.21
       unenv: 2.0.0-rc.24
-      unstorage: 2.0.0-alpha.7(@upstash/redis@1.38.0)(db0@0.3.4(@libsql/client@0.17.4)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1)))(mongodb@7.3.0(@mongodb-js/zstd@7.0.0))(ofetch@2.0.0-alpha.3)
+      unstorage: 2.0.0-alpha.7(@upstash/redis@1.38.0)(db0@0.3.4(@libsql/client@0.17.4)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1)))(mongodb@7.3.0(@mongodb-js/zstd@7.0.0))(ofetch@2.0.0-alpha.3)
     optionalDependencies:
       dotenv: 17.4.2
       jiti: 2.7.0
@@ -7790,6 +7866,8 @@ snapshots:
     dependencies:
       xtend: 4.0.2
     optional: true
+
+  postgres@3.4.9: {}
 
   prebuild-install@7.1.3:
     dependencies:
@@ -8368,10 +8446,10 @@ snapshots:
       unist-util-is: 6.0.1
       unist-util-visit-parents: 6.0.2
 
-  unstorage@2.0.0-alpha.7(@upstash/redis@1.38.0)(db0@0.3.4(@libsql/client@0.17.4)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1)))(mongodb@7.3.0(@mongodb-js/zstd@7.0.0))(ofetch@2.0.0-alpha.3):
+  unstorage@2.0.0-alpha.7(@upstash/redis@1.38.0)(db0@0.3.4(@libsql/client@0.17.4)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1)))(mongodb@7.3.0(@mongodb-js/zstd@7.0.0))(ofetch@2.0.0-alpha.3):
     optionalDependencies:
       '@upstash/redis': 1.38.0
-      db0: 0.3.4(@libsql/client@0.17.4)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(sql.js@1.14.1))
+      db0: 0.3.4(@libsql/client@0.17.4)(drizzle-orm@0.45.1(@libsql/client@0.17.4)(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(postgres@3.4.9)(sql.js@1.14.1))
       mongodb: 7.3.0(@mongodb-js/zstd@7.0.0)
       ofetch: 2.0.0-alpha.3
 
