@@ -1,6 +1,8 @@
 export type CrmView = "dashboard" | "quotes" | "deals" | "settings";
 
-export const CRM_VIEW_STORAGE_KEY = "hotwater-crm-view";
+export const CRM_VIEW_QUERY_PARAM = "view";
+export const QUOTE_ID_QUERY_PARAM = "quote";
+
 export const CRM_NAV_ITEMS: ReadonlyArray<{
   readonly id: CrmView;
   readonly label: string;
@@ -16,28 +18,8 @@ export const CRM_VIEWS: ReadonlySet<CrmView> = new Set(
   CRM_NAV_ITEMS.map((item) => item.id),
 );
 
+export const DEFAULT_CRM_VIEW: CrmView = "dashboard";
+
 export function isCrmView(value: string | null | undefined): value is CrmView {
   return Boolean(value && CRM_VIEWS.has(value as CrmView));
-}
-
-export function readStoredCrmView(): CrmView | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const stored = window.sessionStorage.getItem(CRM_VIEW_STORAGE_KEY);
-
-  return isCrmView(stored) ? stored : null;
-}
-
-export function persistCrmView(view: CrmView) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    window.sessionStorage.setItem(CRM_VIEW_STORAGE_KEY, view);
-  } catch {
-    // Best-effort persistence.
-  }
 }

@@ -19,6 +19,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useQueryState } from "nuqs";
 import { deleteChatAction } from "@/app/actions/chat";
 import {
   CHAT_BOOTSTRAP_SYNC_EVENT,
@@ -42,14 +43,13 @@ import {
   writeBooleanCookie,
 } from "@/lib/chat/sidebar-state";
 import {
-  persistCrmView,
-  readStoredCrmView,
-  type CrmView as CrmViewType,
-} from "@/lib/crm/nav";
+  CRM_VIEW_PARAM,
+  crmViewParser,
+  QUOTE_ID_PARAM,
+  quoteIdParser,
+} from "@/lib/crm/params";
 import type { ChatListItem, SetupStatus, Viewer } from "@/lib/chat/types";
 import { cn } from "@/lib/utils";
-
-const DEFAULT_CRM_VIEW: CrmViewType = "dashboard";
 
 export function AgentChatShell({
   children,
@@ -67,7 +67,6 @@ export function AgentChatShell({
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
   const [chatPanelOpen, setChatPanelOpen] = useState(true);
-  const [crmView, setCrmViewState] = useState<CrmViewType>(DEFAULT_CRM_VIEW);
   const [history, setHistory] = useState<ChatListItem[]>([...initialChats]);
   const [nextCursor, setNextCursor] = useState(initialNextCursor);
   const [historyLoading, setHistoryLoading] = useState(true);
@@ -108,12 +107,6 @@ export function AgentChatShell({
     if (savedPanel !== null) {
       setChatPanelOpen(savedPanel);
     }
-
-    const storedView = readStoredCrmView();
-
-    if (storedView) {
-      setCrmViewState(storedView);
-    }
   }, []);
 
   const requestSignIn = useCallback((draft?: string) => {
@@ -130,11 +123,6 @@ export function AgentChatShell({
   const setChatPanelOpenPersisted = useCallback((open: boolean) => {
     setChatPanelOpen(open);
     writeBooleanCookie(CHAT_PANEL_COOKIE_NAME, open, CHAT_PANEL_COOKIE_MAX_AGE);
-  }, []);
-
-  const setCrmView = useCallback((view: CrmViewType) => {
-    setCrmViewState(view);
-    persistCrmView(view);
   }, []);
 
   const setConnectionEnabled = useCallback(
@@ -285,7 +273,6 @@ export function AgentChatShell({
     () => ({
       activeChatId,
       chatPanelOpen,
-      crmView,
       desktopSidebarOpen,
       enabledConnections,
       removeChat,
@@ -293,7 +280,6 @@ export function AgentChatShell({
       setActiveChatId,
       setChatPanelOpen: setChatPanelOpenPersisted,
       setConnectionEnabled,
-      setCrmView,
       setupStatus: setupStatusState,
       touchChat,
       updateChatTitle,
@@ -302,14 +288,12 @@ export function AgentChatShell({
     [
       activeChatId,
       chatPanelOpen,
-      crmView,
       desktopSidebarOpen,
       enabledConnections,
       removeChat,
       requestSignIn,
       setChatPanelOpenPersisted,
       setConnectionEnabled,
-      setCrmView,
       setupStatusState,
       touchChat,
       updateChatTitle,
@@ -317,24 +301,19 @@ export function AgentChatShell({
     ],
   );
 
-  const sidebar = (
-    <CrmNavSidebar
-      activeChatId={activeChatId}
-      activeCrmView={crmView}
-      chats={history}
-      hasMoreChats={Boolean(nextCursor)}
-      isLoadingMore={loadingMore}
-      onDeleteChat={handleDeleteChat}
-      onLoadMoreChats={loadMoreChats}
-      onNavigate={handleSidebarNavigate}
-      onNewChat={startNewChat}
-      onSelectView={setCrmView}
-      onSignIn={() => requestSignIn()}
-      onToggleSidebar={() => setDesktopSidebarOpenPersisted(false)}
-      setupStatus={setupStatusState}
-      viewer={viewerState}
-    />
-  );
+  const sidebarProps = {
+    activeChatId,
+    chats: history,
+    hasMoreChats: Boolean(nextCursor),
+    isLoadingMore: loadingMore,
+    onDeleteChat: handleDeleteChat,
+    onLoadMoreChats: loadMoreChats,
+    onNavigate: handleSidebarNavigate,
+    onNewChat: startNewChat,
+    onSignIn: () => requestSignIn(),
+    setupStatus: setupStatusState,
+    viewer: viewerState,
+  };
 
   return (
     <ChatShellProvider value={contextValue}>
@@ -347,7 +326,12 @@ export function AgentChatShell({
             desktopSidebarOpen ? "w-64" : "w-0",
           )}
         >
-          {sidebar}
+          <Suspense fallback={null}>
+            <DesktopSidebar
+              {...sidebarProps}
+              onToggleSidebar={() => setDesktopSidebarOpenPersisted(false)}
+            />
+          </Suspense>
         </div>
 
         <section className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -390,7 +374,9 @@ export function AgentChatShell({
             </div>
           </header>
 
-          <CrmView view={crmView} />
+          <Suspense fallback={null}>
+            <CrmStage />
+          </Suspense>
         </section>
 
         <div
@@ -437,25 +423,12 @@ export function AgentChatShell({
         />
         {mobileSidebarOpen ? (
           <div className="fixed inset-y-0 left-0 z-50 md:hidden">
-            <CrmNavSidebar
-              activeChatId={activeChatId}
-              activeCrmView={crmView}
-              chats={history}
-              className="w-[84vw] max-w-80"
-              hasMoreChats={Boolean(nextCursor)}
-              isLoadingMore={loadingMore}
-              onDeleteChat={handleDeleteChat}
-              onLoadMoreChats={loadMoreChats}
-              onNavigate={handleSidebarNavigate}
-              onNewChat={startNewChat}
-              onSelectView={(view) => {
-                setCrmView(view);
-                setMobileSidebarOpen(false);
-              }}
-              onSignIn={() => requestSignIn()}
-              setupStatus={setupStatusState}
-              viewer={viewerState}
-            />
+            <Suspense fallback={null}>
+              <MobileSidebar
+                {...sidebarProps}
+                onClose={() => setMobileSidebarOpen(false)}
+              />
+            </Suspense>
           </div>
         ) : null}
 
@@ -473,6 +446,83 @@ export function AgentChatShell({
       </div>
     </ChatShellProvider>
   );
+}
+
+type SidebarSharedProps = {
+  readonly activeChatId: string | null;
+  readonly chats: readonly ChatListItem[];
+  readonly hasMoreChats: boolean;
+  readonly isLoadingMore: boolean;
+  readonly onDeleteChat: (chatId: string) => void | Promise<void>;
+  readonly onLoadMoreChats?: () => void | Promise<void>;
+  readonly onNavigate?: (chatId?: string | null) => void;
+  readonly onNewChat: () => void;
+  readonly onSignIn?: () => void;
+  readonly setupStatus: SetupStatus;
+  readonly viewer: Viewer | null;
+};
+
+function useCrmView() {
+  const [crmView, setCrmViewUrl] = useQueryState(CRM_VIEW_PARAM, crmViewParser);
+  const [, setQuoteIdUrl] = useQueryState(QUOTE_ID_PARAM, quoteIdParser);
+
+  const setCrmView = useCallback(
+    (view: typeof crmView) => {
+      setCrmViewUrl(view);
+
+      if (view !== "quotes") {
+        setQuoteIdUrl(null);
+      }
+    },
+    [setCrmViewUrl, setQuoteIdUrl],
+  );
+
+  return { crmView, setCrmView };
+}
+
+function DesktopSidebar({
+  onToggleSidebar,
+  ...props
+}: SidebarSharedProps & {
+  readonly onToggleSidebar: () => void;
+}) {
+  const { crmView, setCrmView } = useCrmView();
+
+  return (
+    <CrmNavSidebar
+      {...props}
+      activeCrmView={crmView}
+      onSelectView={setCrmView}
+      onToggleSidebar={onToggleSidebar}
+    />
+  );
+}
+
+function MobileSidebar({
+  onClose,
+  ...props
+}: SidebarSharedProps & {
+  readonly onClose: () => void;
+}) {
+  const { crmView, setCrmView } = useCrmView();
+
+  return (
+    <CrmNavSidebar
+      {...props}
+      activeCrmView={crmView}
+      className="w-[84vw] max-w-80"
+      onSelectView={(view) => {
+        setCrmView(view);
+        onClose();
+      }}
+    />
+  );
+}
+
+function CrmStage() {
+  const { crmView } = useCrmView();
+
+  return <CrmView view={crmView} />;
 }
 
 function ChatPanelHeader() {

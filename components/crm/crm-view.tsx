@@ -15,6 +15,7 @@ import {
   UsersIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useQueryState } from "nuqs";
 import { getQuoteAction, listQuotesAction } from "@/app/actions/quotes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { CrmView } from "@/lib/crm/nav";
+import { quoteIdParser, QUOTE_ID_PARAM } from "@/lib/crm/params";
 import {
   formatQuoteLocation,
   formatQuoteName,
@@ -127,14 +129,14 @@ type QuoteListState =
   | { status: "ready"; quotes: QuoteListItem[] };
 
 type QuoteDetailState =
-  | { status: "idle" }
   | { status: "loading"; id: number }
   | { status: "error"; id: number; message: string }
   | { status: "ready"; quote: QuoteRow };
 
 function QuotesView() {
+  const [quoteId, setQuoteId] = useQueryState(QUOTE_ID_PARAM, quoteIdParser);
   const [list, setList] = useState<QuoteListState>({ status: "loading" });
-  const [selected, setSelected] = useState<QuoteDetailState>({ status: "idle" });
+  const [detail, setDetail] = useState<QuoteDetailState | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -160,41 +162,62 @@ function QuotesView() {
     };
   }, []);
 
-  const handleSelect = useCallback((quoteId: number) => {
-    setSelected({ status: "loading", id: quoteId });
+  // Fetch the full quote whenever the URL `quote` param changes.
+  useEffect(() => {
+    if (quoteId === null) {
+      setDetail(null);
+      return;
+    }
+
+    let cancelled = false;
+    setDetail({ status: "loading", id: quoteId });
 
     void (async () => {
       const result = await getQuoteAction(quoteId);
 
+      if (cancelled) {
+        return;
+      }
+
       if (result.ok) {
-        setSelected({ status: "ready", quote: result.quote });
+        setDetail({ status: "ready", quote: result.quote });
       } else {
-        setSelected({
+        setDetail({
           status: "error",
           id: quoteId,
-          message: result.error,
+          message: result.notFound ? `Quote ${quoteId} not found.` : result.error,
         });
       }
     })();
-  }, []);
 
-  const quoteDetailId =
-    selected.status === "ready"
-      ? selected.quote.id
-      : selected.status === "error"
-        ? selected.id
-        : null;
+    return () => {
+      cancelled = true;
+    };
+  }, [quoteId]);
 
-  if (selected.status !== "idle") {
+  const handleSelect = useCallback(
+    (id: number) => {
+      setQuoteId(id);
+    },
+    [setQuoteId],
+  );
+
+  const handleBack = useCallback(() => {
+    setQuoteId(null);
+  }, [setQuoteId]);
+
+  const handleRetry = useCallback(() => {
+    if (quoteId !== null) {
+      setQuoteId(quoteId);
+    }
+  }, [quoteId, setQuoteId]);
+
+  if (quoteId !== null && detail) {
     return (
       <QuoteDetailView
-        state={selected}
-        onBack={() => setSelected({ status: "idle" })}
-        onRetry={
-          quoteDetailId === null
-            ? () => {}
-            : () => handleSelect(quoteDetailId)
-        }
+        state={detail}
+        onBack={handleBack}
+        onRetry={handleRetry}
       />
     );
   }
@@ -274,14 +297,12 @@ function QuotesView() {
   );
 }
 
-type QuoteDetailActiveState = Exclude<QuoteDetailState, { status: "idle" }>;
-
 function QuoteDetailView({
   state,
   onBack,
   onRetry,
 }: {
-  readonly state: QuoteDetailActiveState;
+  readonly state: QuoteDetailState;
   readonly onBack: () => void;
   readonly onRetry: () => void;
 }) {
@@ -300,7 +321,11 @@ function QuoteDetailView({
         </Button>
         {state.status === "ready" ? (
           <Badge variant="secondary">Quote #{state.quote.id}</Badge>
-        ) : null}
+        ) : state.status === "loading" ? (
+          <Badge variant="outline">Quote #{state.id}</Badge>
+        ) : (
+          <Badge variant="outline">Quote #{state.id}</Badge>
+        )}
       </div>
 
       {state.status === "loading" ? (
