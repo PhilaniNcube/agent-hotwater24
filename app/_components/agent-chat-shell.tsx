@@ -50,6 +50,7 @@ import {
 } from "@/lib/crm/params";
 import type { ChatListItem, SetupStatus, Viewer } from "@/lib/chat/types";
 import { cn } from "@/lib/utils";
+import type { CrmView as CrmViewType } from "@/lib/crm/nav";
 
 export function AgentChatShell({
   children,
@@ -64,6 +65,7 @@ export function AgentChatShell({
   readonly setupStatus: SetupStatus;
   readonly viewer: Viewer | null;
 }) {
+  const { crmView, setCrmView } = useCrmView();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
   const [chatPanelOpen, setChatPanelOpen] = useState(true);
@@ -164,8 +166,9 @@ export function AgentChatShell({
     activeChatIdRef.current = null;
     setActiveChatId(null);
     setMobileSidebarOpen(false);
-    router.push("/", { scroll: false });
-  }, [router]);
+    const targetPath = crmView === "dashboard" ? "/" : `/${crmView}`;
+    router.push(targetPath, { scroll: false });
+  }, [router, crmView]);
 
   const handleSidebarNavigate = useCallback((chatId?: string | null) => {
     setMobileSidebarOpen(false);
@@ -313,6 +316,8 @@ export function AgentChatShell({
     onSignIn: () => requestSignIn(),
     setupStatus: setupStatusState,
     viewer: viewerState,
+    activeCrmView: crmView,
+    onSelectView: setCrmView,
   };
 
   return (
@@ -375,7 +380,7 @@ export function AgentChatShell({
           </header>
 
           <Suspense fallback={null}>
-            <CrmStage />
+            <CrmStage crmView={crmView} />
           </Suspense>
         </section>
 
@@ -460,21 +465,38 @@ type SidebarSharedProps = {
   readonly onSignIn?: () => void;
   readonly setupStatus: SetupStatus;
   readonly viewer: Viewer | null;
+  readonly activeCrmView: CrmViewType;
+  readonly onSelectView: (view: CrmViewType) => void;
 };
 
 function useCrmView() {
-  const [crmView, setCrmViewUrl] = useQueryState(CRM_VIEW_PARAM, crmViewParser);
+  const pathname = usePathname();
+  const router = useRouter();
+  const [viewQuery, setViewQuery] = useQueryState(CRM_VIEW_PARAM, crmViewParser);
   const [, setQuoteIdUrl] = useQueryState(QUOTE_ID_PARAM, quoteIdParser);
 
+  const crmView = useMemo(() => {
+    if (pathname === "/") return "dashboard";
+    if (pathname.startsWith("/quotes")) return "quotes";
+    if (pathname.startsWith("/deals")) return "deals";
+    if (pathname.startsWith("/settings")) return "settings";
+    return viewQuery ?? "dashboard";
+  }, [pathname, viewQuery]);
+
   const setCrmView = useCallback(
-    (view: typeof crmView) => {
-      setCrmViewUrl(view);
+    (view: CrmViewType) => {
+      if (pathname.startsWith("/chat/")) {
+        setViewQuery(view);
+      } else {
+        const targetPath = view === "dashboard" ? "/" : `/${view}`;
+        router.push(targetPath);
+      }
 
       if (view !== "quotes") {
         setQuoteIdUrl(null);
       }
     },
-    [setCrmViewUrl, setQuoteIdUrl],
+    [pathname, router, setViewQuery, setQuoteIdUrl],
   );
 
   return { crmView, setCrmView };
@@ -486,13 +508,9 @@ function DesktopSidebar({
 }: SidebarSharedProps & {
   readonly onToggleSidebar: () => void;
 }) {
-  const { crmView, setCrmView } = useCrmView();
-
   return (
     <CrmNavSidebar
       {...props}
-      activeCrmView={crmView}
-      onSelectView={setCrmView}
       onToggleSidebar={onToggleSidebar}
     />
   );
@@ -504,24 +522,19 @@ function MobileSidebar({
 }: SidebarSharedProps & {
   readonly onClose: () => void;
 }) {
-  const { crmView, setCrmView } = useCrmView();
-
   return (
     <CrmNavSidebar
       {...props}
-      activeCrmView={crmView}
       className="w-[84vw] max-w-80"
       onSelectView={(view) => {
-        setCrmView(view);
+        props.onSelectView(view);
         onClose();
       }}
     />
   );
 }
 
-function CrmStage() {
-  const { crmView } = useCrmView();
-
+function CrmStage({ crmView }: { readonly crmView: CrmViewType }) {
   return <CrmView view={crmView} />;
 }
 

@@ -13,8 +13,9 @@ import {
   PhoneIcon,
   TrendingUpIcon,
   UsersIcon,
+  QuoteIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { useQueryState } from "nuqs";
 import { getQuoteAction, listQuotesAction } from "@/app/actions/quotes";
 import { Badge } from "@/components/ui/badge";
@@ -60,63 +61,221 @@ export function CrmView({ view }: { readonly view: CrmView }) {
 }
 
 function DashboardView() {
+  const [list, setList] = useState<QuoteListState>({ status: "loading" });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    setList({ status: "loading" });
+
+    void (async () => {
+      const result = await listQuotesAction(500);
+
+      if (cancelled) {
+        return;
+      }
+
+      if (result.ok) {
+        setList({ status: "ready", quotes: result.quotes });
+      } else {
+        setList({ status: "error", message: result.error });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const stats = useMemo(() => {
+    if (list.status !== "ready") {
+      return {
+        totalLast5Days: 0,
+        contactedLast5Days: 0,
+        contactRate: 0,
+        avgGeyserSize: 0,
+        daysData: [],
+      };
+    }
+
+    const quotes = list.quotes;
+    
+    // Generate dates for the last 5 days (today is index 4)
+    const last5Days: Date[] = [];
+    for (let i = 4; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      last5Days.push(d);
+    }
+
+    let totalLast5Days = 0;
+    let contactedLast5Days = 0;
+    let geyserSizesCount = 0;
+    let geyserSizesSum = 0;
+
+    const daysData = last5Days.map((day) => {
+      const dayQuotes = quotes.filter((q) => {
+        if (!q.created_at) return false;
+        return day.toDateString() === new Date(q.created_at).toDateString();
+      });
+
+      const total = dayQuotes.length;
+      const contacted = dayQuotes.filter((q) => q.contacted).length;
+      const newQuotes = total - contacted;
+
+      totalLast5Days += total;
+      contactedLast5Days += contacted;
+
+      dayQuotes.forEach((q) => {
+        if (q.geyserSize) {
+          geyserSizesSum += q.geyserSize;
+          geyserSizesCount++;
+        }
+      });
+
+      const dayFormatter = new Intl.DateTimeFormat(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      });
+
+      return {
+        date: day,
+        label: dayFormatter.format(day),
+        total,
+        contacted,
+        newQuotes,
+      };
+    });
+
+    const maxTotal = Math.max(...daysData.map((d) => d.total), 1);
+    
+    const daysDataWithHeights = daysData.map((d) => ({
+      ...d,
+      height: (d.total / maxTotal) * 100,
+      contactedHeight: d.total > 0 ? (d.contacted / d.total) * 100 : 0,
+    }));
+
+    const contactRate = totalLast5Days > 0 ? Math.round((contactedLast5Days / totalLast5Days) * 100) : 0;
+    const avgGeyserSize = geyserSizesCount > 0 ? Math.round(geyserSizesSum / geyserSizesCount) : 0;
+
+    return {
+      totalLast5Days,
+      contactedLast5Days,
+      contactRate,
+      avgGeyserSize,
+      daysData: daysDataWithHeights,
+    };
+  }, [list]);
+
+  if (list.status === "loading") {
+    return (
+      <div className="flex h-full items-center justify-center gap-2 text-sm text-muted-foreground">
+        <Loader2Icon className="size-4 animate-spin" />
+        Loading dashboard...
+      </div>
+    );
+  }
+
+  if (list.status === "error") {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
+        <p className="text-sm text-destructive">{list.message}</p>
+        <Button onClick={() => window.location.reload()} size="sm" variant="outline">
+          Reload page
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full flex-col gap-6 overflow-y-auto px-6 py-6 lg:px-10">
       <PageHeader
-        description="Pulse of your sales pipeline at a glance."
+        description="Performance indicators and quote submission trends."
         title="Dashboard"
       />
+      
+      {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          icon={HandshakeIcon}
-          label="Open deals"
-          trend="+3 this week"
-          value="$48,200"
+          icon={QuoteIcon}
+          label="Total quotes (5d)"
+          trend={`All time: ${list.quotes.length}`}
+          value={String(stats.totalLast5Days)}
         />
         <StatCard
-          icon={UsersIcon}
-          label="Contacts"
-          trend="+18 this month"
-          value="1,284"
+          icon={CheckCircle2Icon}
+          label="Contacted (5d)"
+          trend={`${stats.totalLast5Days - stats.contactedLast5Days} pending`}
+          value={`${stats.contactedLast5Days} / ${stats.totalLast5Days}`}
         />
         <StatCard
           icon={TrendingUpIcon}
-          label="Win rate"
-          trend="+4.2% MoM"
-          value="32.4%"
+          label="Contact rate"
+          trend="Target: 90%+"
+          value={`${stats.contactRate}%`}
         />
         <StatCard
-          icon={MailIcon}
-          label="Replies"
-          trend="Last 7 days"
-          value="96"
+          icon={CalendarIcon}
+          label="Avg geyser size"
+          trend="Based on last 5d"
+          value={stats.avgGeyserSize > 0 ? `${stats.avgGeyserSize} L` : "—"}
         />
       </div>
+
+      {/* Quote Activity Chart */}
       <Card>
         <CardHeader className="flex-row items-start justify-between">
           <div>
-            <CardTitle>Pipeline velocity</CardTitle>
-            <CardDescription>Deals moved per week, last 6 weeks.</CardDescription>
+            <CardTitle>Quotes activity</CardTitle>
+            <CardDescription>Submitted and contacted quote requests over the last 5 days.</CardDescription>
           </div>
-          <Badge variant="secondary">+12%</Badge>
+          <Badge className="bg-primary/20 text-primary border-primary/30" variant="outline">
+            Last 5 Days
+          </Badge>
         </CardHeader>
         <CardContent>
-          <div className="flex h-40 items-end gap-3">
-            {[40, 65, 52, 80, 70, 96].map((h, i) => (
-              <div
-                className="flex flex-1 flex-col items-center gap-2"
-                key={i}
-              >
+          {stats.totalLast5Days === 0 ? (
+            <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+              No quotes submitted in the last 5 days.
+            </div>
+          ) : (
+            <div className="flex h-64 items-end gap-4 md:gap-8 pt-8">
+              {stats.daysData.map((d, i) => (
                 <div
-                  className="w-full rounded-md bg-foreground/85"
-                  style={{ height: `${h}%` }}
-                />
-                <span className="text-xs text-muted-foreground">
-                  W{i + 1}
-                </span>
-              </div>
-            ))}
-          </div>
+                  className="group relative flex flex-1 flex-col items-center gap-2 h-full justify-end"
+                  key={i}
+                >
+                  {/* Premium floating tooltip */}
+                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 rounded-md bg-popover px-3 py-1.5 text-xs font-semibold text-popover-foreground shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap border border-border z-20">
+                    <p className="font-bold text-foreground mb-0.5">{d.label}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Total: <span className="text-foreground">{d.total}</span> · Contacted: <span className="text-foreground">{d.contacted}</span>
+                    </p>
+                  </div>
+
+                  {/* The Chart Bar (Total Quotes) */}
+                  <div
+                    className="relative w-full rounded-t-md bg-muted overflow-hidden transition-all duration-300 hover:bg-muted/80 flex flex-col justify-end min-h-[8px]"
+                    style={{ height: `${Math.max(d.height, 4)}%` }}
+                  >
+                    {/* Contacted sub-bar */}
+                    {d.total > 0 && d.contacted > 0 && (
+                      <div
+                        className="w-full rounded-t-sm bg-primary transition-all duration-500"
+                        style={{ height: `${d.contactedHeight}%` }}
+                      />
+                    )}
+                  </div>
+                  
+                  {/* Label */}
+                  <span className="text-xs text-muted-foreground font-medium text-center truncate w-full">
+                    {d.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

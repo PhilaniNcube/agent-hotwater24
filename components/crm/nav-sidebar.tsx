@@ -121,19 +121,25 @@ export function CrmNavSidebar({
           {CRM_NAV_ITEMS.map((item) => {
             const Icon = VIEW_ICON[item.id];
             const active = activeCrmView === item.id;
+            const href = item.id === "dashboard" ? "/" : `/${item.id}`;
             return (
               <li key={item.id}>
-                <button
+                <Link
                   className={cn(
                     "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
                     active ? activeClass : inactiveClass,
                   )}
-                  onClick={() => onSelectView(item.id)}
-                  type="button"
+                  href={href}
+                  onClick={(event) => {
+                    if (activeChatId) {
+                      event.preventDefault();
+                      onSelectView(item.id);
+                    }
+                  }}
                 >
                   <Icon className="size-4 shrink-0" />
                   <span className="min-w-0">{item.label}</span>
-                </button>
+                </Link>
               </li>
             );
           })}
@@ -153,6 +159,9 @@ export function CrmNavSidebar({
             <ul className="flex flex-col gap-0.5">
               {chats.map((chat) => {
                 const active = chat.id === activeChatId;
+                const chatHref = `/chat/${chat.id}${
+                  activeCrmView !== "dashboard" ? `?view=${activeCrmView}` : ""
+                }`;
                 return (
                   <li key={chat.id} className="group/session relative">
                     <Link
@@ -160,7 +169,7 @@ export function CrmNavSidebar({
                         "flex h-8 min-w-0 items-center rounded-md px-2 pr-8 text-sm transition-colors",
                         active ? activeClass : inactiveClass,
                       )}
-                      href={`/chat/${chat.id}`}
+                      href={chatHref}
                       onClick={() => onNavigate?.(chat.id)}
                     >
                       <span className="block truncate">{chat.title || "New chat"}</span>

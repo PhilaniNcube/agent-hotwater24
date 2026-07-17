@@ -45,7 +45,7 @@ export function HomeChatPage() {
   }, [setActiveChatId]);
 
   useEffect(() => {
-    if (pathname === "/") {
+    if (!pathname.startsWith("/chat/")) {
       submittingRef.current = false;
       setSubmitting(false);
     }
@@ -133,7 +133,8 @@ export function HomeChatPage() {
     submitting,
   });
 
-  if (pathname !== "/") {
+  const isChatRoute = pathname.startsWith("/chat/");
+  if (isChatRoute) {
     return null;
   }
 
