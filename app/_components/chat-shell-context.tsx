@@ -2,6 +2,7 @@
 
 import { createContext, useContext, type ReactNode } from "react";
 import type { ChatListItem, SetupStatus, Viewer } from "@/lib/chat/types";
+import type { CrmView } from "@/lib/crm/nav";
 
 export type EnabledConnections = {
   readonly linear: boolean;
@@ -11,15 +12,19 @@ export type EnabledConnections = {
 
 type ChatShellContextValue = {
   readonly activeChatId: string | null;
+  readonly crmView: CrmView;
+  readonly chatPanelOpen: boolean;
   readonly desktopSidebarOpen: boolean;
   readonly enabledConnections: EnabledConnections;
   readonly removeChat: (chatId: string) => void;
   readonly requestSignIn: (draft?: string) => void;
   readonly setActiveChatId: (chatId: string | null) => void;
+  readonly setChatPanelOpen: (open: boolean) => void;
   readonly setConnectionEnabled: (
     connection: keyof EnabledConnections,
     enabled: boolean,
   ) => void;
+  readonly setCrmView: (view: CrmView) => void;
   readonly setupStatus: SetupStatus;
   readonly touchChat: (chat: ChatListItem) => void;
   readonly updateChatTitle: (chatId: string, title: string) => void;

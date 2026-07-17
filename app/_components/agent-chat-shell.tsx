@@ -1,6 +1,13 @@
 "use client";
 
-import { CheckIcon, MenuIcon, PanelLeftIcon, UploadIcon } from "lucide-react";
+import {
+  CheckIcon,
+  MenuIcon,
+  PanelLeftIcon,
+  PanelRightIcon,
+  UploadIcon,
+  SparklesIcon,
+} from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Suspense,
@@ -21,19 +28,28 @@ import {
   ChatShellProvider,
   type EnabledConnections,
 } from "@/app/_components/chat-shell-context";
-import { AuthDisplayLoggedOut } from "@/components/auth/auth-display";
+import { CrmView } from "@/components/crm/crm-view";
+import { CrmNavSidebar } from "@/components/crm/nav-sidebar";
 import { SignInModal } from "@/components/auth/sign-in-modal";
-import { ChatSidebar } from "@/components/chat/sidebar";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
-  parseSidebarOpen,
-  serializeSidebarOpen,
+  CHAT_PANEL_COOKIE_MAX_AGE,
+  CHAT_PANEL_COOKIE_NAME,
+  readBooleanCookie,
   SIDEBAR_COOKIE_MAX_AGE,
   SIDEBAR_COOKIE_NAME,
+  writeBooleanCookie,
 } from "@/lib/chat/sidebar-state";
+import {
+  persistCrmView,
+  readStoredCrmView,
+  type CrmView as CrmViewType,
+} from "@/lib/crm/nav";
 import type { ChatListItem, SetupStatus, Viewer } from "@/lib/chat/types";
 import { cn } from "@/lib/utils";
+
+const DEFAULT_CRM_VIEW: CrmViewType = "dashboard";
 
 export function AgentChatShell({
   children,
@@ -50,6 +66,8 @@ export function AgentChatShell({
 }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
+  const [chatPanelOpen, setChatPanelOpen] = useState(true);
+  const [crmView, setCrmViewState] = useState<CrmViewType>(DEFAULT_CRM_VIEW);
   const [history, setHistory] = useState<ChatListItem[]>([...initialChats]);
   const [nextCursor, setNextCursor] = useState(initialNextCursor);
   const [historyLoading, setHistoryLoading] = useState(true);
@@ -60,7 +78,7 @@ export function AgentChatShell({
   const [viewerState, setViewerState] = useState(viewer);
   const [setupStatusState, setSetupStatusState] = useState(setupStatus);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
-  const [enabledConnections, setEnabledConnections] = useState<EnabledConnections>({
+  const [enabledConnections, setEnabledConnectionsState] = useState<EnabledConnections>({
     linear: true,
     notion: true,
     sentry: true,
@@ -79,11 +97,22 @@ export function AgentChatShell({
   }, [nextCursor]);
 
   useLayoutEffect(() => {
-    const saved = readSidebarCookie();
+    const savedSidebar = readBooleanCookie(SIDEBAR_COOKIE_NAME);
 
-    if (saved !== null) {
-      setDesktopSidebarOpen(saved);
-      setSidebarDocumentHint(saved);
+    if (savedSidebar !== null) {
+      setDesktopSidebarOpen(savedSidebar);
+    }
+
+    const savedPanel = readBooleanCookie(CHAT_PANEL_COOKIE_NAME);
+
+    if (savedPanel !== null) {
+      setChatPanelOpen(savedPanel);
+    }
+
+    const storedView = readStoredCrmView();
+
+    if (storedView) {
+      setCrmViewState(storedView);
     }
   }, []);
 
@@ -95,13 +124,22 @@ export function AgentChatShell({
 
   const setDesktopSidebarOpenPersisted = useCallback((open: boolean) => {
     setDesktopSidebarOpen(open);
-    setSidebarDocumentHint(open);
-    document.cookie = `${SIDEBAR_COOKIE_NAME}=${serializeSidebarOpen(open)}; Path=/; Max-Age=${SIDEBAR_COOKIE_MAX_AGE}; SameSite=Lax`;
+    writeBooleanCookie(SIDEBAR_COOKIE_NAME, open, SIDEBAR_COOKIE_MAX_AGE);
+  }, []);
+
+  const setChatPanelOpenPersisted = useCallback((open: boolean) => {
+    setChatPanelOpen(open);
+    writeBooleanCookie(CHAT_PANEL_COOKIE_NAME, open, CHAT_PANEL_COOKIE_MAX_AGE);
+  }, []);
+
+  const setCrmView = useCallback((view: CrmViewType) => {
+    setCrmViewState(view);
+    persistCrmView(view);
   }, []);
 
   const setConnectionEnabled = useCallback(
     (connection: keyof EnabledConnections, enabled: boolean) => {
-      setEnabledConnections((current) => ({
+      setEnabledConnectionsState((current) => ({
         ...current,
         [connection]: enabled,
       }));
@@ -246,12 +284,16 @@ export function AgentChatShell({
   const contextValue = useMemo(
     () => ({
       activeChatId,
+      chatPanelOpen,
+      crmView,
       desktopSidebarOpen,
       enabledConnections,
       removeChat,
       requestSignIn,
       setActiveChatId,
+      setChatPanelOpen: setChatPanelOpenPersisted,
       setConnectionEnabled,
+      setCrmView,
       setupStatus: setupStatusState,
       touchChat,
       updateChatTitle,
@@ -259,11 +301,15 @@ export function AgentChatShell({
     }),
     [
       activeChatId,
+      chatPanelOpen,
+      crmView,
       desktopSidebarOpen,
       enabledConnections,
       removeChat,
       requestSignIn,
+      setChatPanelOpenPersisted,
       setConnectionEnabled,
+      setCrmView,
       setupStatusState,
       touchChat,
       updateChatTitle,
@@ -272,36 +318,22 @@ export function AgentChatShell({
   );
 
   const sidebar = (
-    <ChatSidebar
+    <CrmNavSidebar
       activeChatId={activeChatId}
+      activeCrmView={crmView}
       chats={history}
       hasMoreChats={Boolean(nextCursor)}
-      isLoadingChats={historyLoading}
       isLoadingMore={loadingMore}
       onDeleteChat={handleDeleteChat}
       onLoadMoreChats={loadMoreChats}
       onNavigate={handleSidebarNavigate}
       onNewChat={startNewChat}
+      onSelectView={setCrmView}
       onSignIn={() => requestSignIn()}
       onToggleSidebar={() => setDesktopSidebarOpenPersisted(false)}
       setupStatus={setupStatusState}
       viewer={viewerState}
     />
-  );
-  const loggedOutAuthActions = historyLoading ? (
-    <AuthDisplayLoggedOut>
-      <AuthTopActions onSignIn={() => requestSignIn()} />
-    </AuthDisplayLoggedOut>
-  ) : (
-    <AuthTopActions onSignIn={() => requestSignIn()} />
-  );
-  const topRightActions = (
-    <div className="pointer-events-auto mt-1 flex min-w-0 items-center justify-end gap-1.5">
-      <Suspense fallback={null}>
-        <ChatRouteShareButton />
-      </Suspense>
-      {viewerState ? null : loggedOutAuthActions}
-    </div>
   );
 
   return (
@@ -318,8 +350,8 @@ export function AgentChatShell({
           {sidebar}
         </div>
 
-        <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between px-2 py-2 md:px-3">
+        <section className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
+          <header className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between px-2 py-2 md:px-3">
             <div className="pointer-events-auto flex items-center gap-1">
               <Button
                 aria-label="Open sidebar"
@@ -344,11 +376,55 @@ export function AgentChatShell({
                 </Button>
               ) : null}
             </div>
-            {topRightActions}
-          </div>
+            <div className="pointer-events-auto mt-1 flex min-w-0 items-center justify-end gap-1.5">
+              <Button
+                aria-label={chatPanelOpen ? "Hide chat panel" : "Show chat panel"}
+                className="text-muted-foreground hover:text-foreground"
+                onClick={() => setChatPanelOpenPersisted(!chatPanelOpen)}
+                size="icon-sm"
+                type="button"
+                variant="ghost"
+              >
+                <PanelRightIcon className="size-4" />
+              </Button>
+            </div>
+          </header>
 
-          {children}
-        </main>
+          <CrmView view={crmView} />
+        </section>
+
+        <div
+          data-desktop-chat-panel
+          className={cn(
+            "hidden shrink-0 overflow-hidden border-l border-border bg-card/30 transition-[width] duration-200 ease-in-out md:block",
+            chatPanelOpen ? "w-[clamp(20rem,28vw,32rem)]" : "w-0",
+          )}
+        >
+          <div className="flex h-full w-[clamp(20rem,28vw,32rem)] flex-col">
+            <ChatPanelHeader />
+            <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+          </div>
+        </div>
+
+        {chatPanelOpen ? (
+          <div
+            className="flex w-full shrink-0 flex-col border-t border-border bg-card md:hidden"
+            data-mobile-chat-panel
+          >
+            <ChatPanelHeader />
+            <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+          </div>
+        ) : (
+          <Button
+            aria-label="Show chat panel"
+            className="fixed bottom-4 right-4 z-30 md:hidden"
+            onClick={() => setChatPanelOpenPersisted(true)}
+            size="icon"
+            type="button"
+          >
+            <SparklesIcon className="size-4" />
+          </Button>
+        )}
 
         <div
           className={cn(
@@ -361,17 +437,21 @@ export function AgentChatShell({
         />
         {mobileSidebarOpen ? (
           <div className="fixed inset-y-0 left-0 z-50 md:hidden">
-            <ChatSidebar
+            <CrmNavSidebar
               activeChatId={activeChatId}
+              activeCrmView={crmView}
               chats={history}
               className="w-[84vw] max-w-80"
               hasMoreChats={Boolean(nextCursor)}
-              isLoadingChats={historyLoading}
               isLoadingMore={loadingMore}
               onDeleteChat={handleDeleteChat}
               onLoadMoreChats={loadMoreChats}
               onNavigate={handleSidebarNavigate}
               onNewChat={startNewChat}
+              onSelectView={(view) => {
+                setCrmView(view);
+                setMobileSidebarOpen(false);
+              }}
               onSignIn={() => requestSignIn()}
               setupStatus={setupStatusState}
               viewer={viewerState}
@@ -395,43 +475,37 @@ export function AgentChatShell({
   );
 }
 
+function ChatPanelHeader() {
+  return (
+    <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-3">
+      <div className="flex items-center gap-2 text-sm font-semibold">
+        <SparklesIcon className="size-4 text-muted-foreground" />
+        eve Copilot
+      </div>
+      <Suspense fallback={null}>
+        <ChatRouteShareButton compact />
+      </Suspense>
+    </div>
+  );
+}
+
 function SidebarCookieScript() {
   const source = `try{var match=document.cookie.match(/(?:^|; )${SIDEBAR_COOKIE_NAME}=([^;]*)/);var value=match?decodeURIComponent(match[1]):"";if(value==="closed"){document.documentElement.dataset.eveChatSidebar="closed";}}catch{}`;
 
   return <script dangerouslySetInnerHTML={{ __html: source }} />;
 }
 
-function readSidebarCookie() {
-  const match = document.cookie.match(
-    new RegExp(`(?:^|; )${SIDEBAR_COOKIE_NAME}=([^;]*)`),
-  );
-
-  if (!match?.[1]) {
-    return null;
-  }
-
-  return parseSidebarOpen(match[1]);
-}
-
-function setSidebarDocumentHint(open: boolean) {
-  if (open) {
-    delete document.documentElement.dataset.eveChatSidebar;
-  } else {
-    document.documentElement.dataset.eveChatSidebar = "closed";
-  }
-}
-
-function ChatRouteShareButton() {
+function ChatRouteShareButton({ compact = false }: { readonly compact?: boolean }) {
   const pathname = usePathname();
 
   if (!pathname.startsWith("/chat/")) {
     return null;
   }
 
-  return <ShareChatButton />;
+  return <ShareChatButton compact={compact} />;
 }
 
-function ShareChatButton() {
+function ShareChatButton({ compact }: { readonly compact?: boolean }) {
   const [copied, setCopied] = useState(false);
   const copyResetTimerRef = useRef<number | null>(null);
 
@@ -465,7 +539,10 @@ function ShareChatButton() {
       <TooltipTrigger asChild>
         <Button
           aria-label={copied ? "Copied chat link" : "Copy chat link"}
-          className="text-muted-foreground hover:text-foreground"
+          className={cn(
+            "text-muted-foreground hover:text-foreground",
+            compact ? undefined : "mt-1",
+          )}
           onClick={handleCopyLink}
           size="icon-sm"
           type="button"
@@ -480,28 +557,6 @@ function ShareChatButton() {
       </TooltipTrigger>
       <TooltipContent side="bottom">{copied ? "Copied" : "Copy link"}</TooltipContent>
     </Tooltip>
-  );
-}
-
-function AuthTopActions({ onSignIn }: { readonly onSignIn: () => void }) {
-  return (
-    <div className="flex max-w-[calc(100vw-4rem)] items-center gap-1.5">
-      <Button
-        className="h-8 rounded-md border border-border bg-background/70 px-3 text-sm font-medium text-foreground shadow-sm hover:bg-muted/60"
-        onClick={onSignIn}
-        type="button"
-        variant="outline"
-      >
-        Log In
-      </Button>
-      <Button
-        className="h-8 rounded-md bg-foreground px-3 text-sm font-medium text-background hover:bg-foreground/90"
-        onClick={onSignIn}
-        type="button"
-      >
-        Sign Up
-      </Button>
-    </div>
   );
 }
 
