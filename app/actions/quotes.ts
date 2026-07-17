@@ -1,11 +1,11 @@
 "use server";
 
 import {
-  getQuoteById,
   listQuotes,
   type QuoteListItem,
   type QuoteRow,
 } from "@/lib/crm/quotes";
+import { getCachedQuote } from "@/lib/crm/cached-quotes";
 
 export async function listQuotesAction(
   limit = 100,
@@ -29,7 +29,7 @@ export async function getQuoteAction(
   | { ok: false; error: string; notFound?: boolean }
 > {
   try {
-    const quote = await getQuoteById(id);
+    const quote = await getCachedQuote(id);
 
     if (!quote) {
       return { ok: false, error: `Quote ${id} not found.`, notFound: true };

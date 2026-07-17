@@ -1,7 +1,6 @@
 export type CrmView = "dashboard" | "quotes" | "deals" | "settings";
 
 export const CRM_VIEW_QUERY_PARAM = "view";
-export const QUOTE_ID_QUERY_PARAM = "quote";
 
 export const CRM_NAV_ITEMS: ReadonlyArray<{
   readonly id: CrmView;

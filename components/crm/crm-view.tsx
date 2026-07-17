@@ -15,8 +15,9 @@ import {
   UsersIcon,
   QuoteIcon,
 } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState, useMemo } from "react";
-import { useQueryState } from "nuqs";
 import { getQuoteAction, listQuotesAction } from "@/app/actions/quotes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { CrmView } from "@/lib/crm/nav";
-import { quoteIdParser, QUOTE_ID_PARAM } from "@/lib/crm/params";
 import {
   formatQuoteLocation,
   formatQuoteName,
@@ -292,8 +292,15 @@ type QuoteDetailState =
   | { status: "error"; id: number; message: string }
   | { status: "ready"; quote: QuoteRow };
 
+function useQuoteIdFromPath() {
+  const pathname = usePathname();
+  const match = pathname.match(/^\/quotes\/(\d+)$/);
+  return match ? Number(match[1]) : null;
+}
+
 function QuotesView() {
-  const [quoteId, setQuoteId] = useQueryState(QUOTE_ID_PARAM, quoteIdParser);
+  const pathname = usePathname();
+  const quoteId = useQuoteIdFromPath();
   const [list, setList] = useState<QuoteListState>({ status: "loading" });
   const [detail, setDetail] = useState<QuoteDetailState | null>(null);
 
@@ -321,7 +328,6 @@ function QuotesView() {
     };
   }, []);
 
-  // Fetch the full quote whenever the URL `quote` param changes.
   useEffect(() => {
     if (quoteId === null) {
       setDetail(null);
@@ -354,27 +360,35 @@ function QuotesView() {
     };
   }, [quoteId]);
 
-  const handleSelect = useCallback(
-    (id: number) => {
-      setQuoteId(id);
-    },
-    [setQuoteId],
-  );
-
   const handleBack = useCallback(() => {
-    setQuoteId(null);
-  }, [setQuoteId]);
+    window.history.back();
+  }, []);
 
   const handleRetry = useCallback(() => {
     if (quoteId !== null) {
-      setQuoteId(quoteId);
-    }
-  }, [quoteId, setQuoteId]);
+      const qid = quoteId;
+      setDetail({ status: "loading", id: qid });
 
-  if (quoteId !== null && detail) {
+      void (async () => {
+        const result = await getQuoteAction(qid);
+
+        if (result.ok) {
+          setDetail({ status: "ready", quote: result.quote });
+        } else {
+          setDetail({
+            status: "error",
+            id: qid,
+            message: result.notFound ? `Quote ${qid} not found.` : result.error,
+          });
+        }
+      })();
+    }
+  }, [quoteId]);
+
+  if (quoteId !== null) {
     return (
       <QuoteDetailView
-        state={detail}
+        state={detail ?? { status: "loading", id: quoteId }}
         onBack={handleBack}
         onRetry={handleRetry}
       />
@@ -416,36 +430,38 @@ function QuotesView() {
             </TableHeader>
             <TableBody>
               {list.quotes.map((quote) => (
-                <TableRow
-                  className="cursor-pointer"
-                  key={quote.id}
-                  onClick={() => handleSelect(quote.id)}
-                >
-                  <TableCell className="text-muted-foreground">
-                    {quote.id}
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {formatQuoteName(quote)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatQuoteLocation(quote)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {quote.geyserSize ? `${quote.geyserSize}L` : "—"}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatDate(quote.created_at)}
-                  </TableCell>
-                  <TableCell>
-                    <ContactedBadge contacted={quote.contacted} />
-                  </TableCell>
-                  <TableCell>
-                    {quote.source ? (
-                      <Badge variant="outline">{quote.source}</Badge>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
+                <TableRow className="cursor-pointer" key={quote.id}>
+                  <Link
+                    className="contents"
+                    href={`/quotes/${quote.id}`}
+                    prefetch={true}
+                  >
+                    <TableCell className="text-muted-foreground">
+                      {quote.id}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {formatQuoteName(quote)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {formatQuoteLocation(quote)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {quote.geyserSize ? `${quote.geyserSize}L` : "—"}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {formatDate(quote.created_at)}
+                    </TableCell>
+                    <TableCell>
+                      <ContactedBadge contacted={quote.contacted} />
+                    </TableCell>
+                    <TableCell>
+                      {quote.source ? (
+                        <Badge variant="outline">{quote.source}</Badge>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                  </Link>
                 </TableRow>
               ))}
             </TableBody>

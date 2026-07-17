@@ -45,8 +45,6 @@ import {
 import {
   CRM_VIEW_PARAM,
   crmViewParser,
-  QUOTE_ID_PARAM,
-  quoteIdParser,
 } from "@/lib/crm/params";
 import type { ChatListItem, SetupStatus, Viewer } from "@/lib/chat/types";
 import { cn } from "@/lib/utils";
@@ -405,7 +403,9 @@ export function AgentChatShell({
         >
           <div className="flex h-full w-[clamp(20rem,28vw,32rem)] flex-col">
             <ChatPanelHeader />
-            <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+            <div className="flex min-h-0 flex-1 flex-col">
+              <Suspense fallback={null}>{children}</Suspense>
+            </div>
           </div>
         </div>
 
@@ -415,7 +415,9 @@ export function AgentChatShell({
             data-mobile-chat-panel
           >
             <ChatPanelHeader />
-            <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+            <div className="flex min-h-0 flex-1 flex-col">
+              <Suspense fallback={null}>{children}</Suspense>
+            </div>
           </div>
         ) : (
           <Button
@@ -483,7 +485,6 @@ function useCrmView() {
   const pathname = usePathname();
   const router = useRouter();
   const [viewQuery, setViewQuery] = useQueryState(CRM_VIEW_PARAM, crmViewParser);
-  const [, setQuoteIdUrl] = useQueryState(QUOTE_ID_PARAM, quoteIdParser);
 
   const crmView = useMemo(() => {
     if (pathname === "/") return "dashboard";
@@ -501,12 +502,8 @@ function useCrmView() {
         const targetPath = view === "dashboard" ? "/" : `/${view}`;
         router.push(targetPath);
       }
-
-      if (view !== "quotes") {
-        setQuoteIdUrl(null);
-      }
     },
-    [pathname, router, setViewQuery, setQuoteIdUrl],
+    [pathname, router, setViewQuery],
   );
 
   return { crmView, setCrmView };
